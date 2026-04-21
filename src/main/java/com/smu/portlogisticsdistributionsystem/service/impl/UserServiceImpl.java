@@ -9,12 +9,17 @@ import com.smu.portlogisticsdistributionsystem.mapper.UserMapper;
 import com.smu.portlogisticsdistributionsystem.service.UserService;
 import com.smu.portlogisticsdistributionsystem.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import com.smu.portlogisticsdistributionsystem.util.RedisConstants;
+
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
@@ -23,17 +28,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Autowired
     private JwtUtil jwtUtil;
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
 
     @Override
     public Map<String, Object> login(UserLoginDTO loginDTO) {
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(User::getUsername, loginDTO.getUsername());
         User user = this.getOne(wrapper);
-
         if (user == null) {
             throw new RuntimeException("用户不存在");
         }
-
         if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())) {
             throw new RuntimeException("密码错误");
         }
@@ -45,6 +50,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         result.put("token", token);
         result.put("username", user.getUsername());
         result.put("role", role);
+        stringRedisTemplate.opsForHash().putAll(RedisConstants.LOGIN_SESSION+token,result);
+        stringRedisTemplate.expire(RedisConstants.LOGIN_SESSION+token,30, TimeUnit.MINUTES);
         return result;
     }
 
