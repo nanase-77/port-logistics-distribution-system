@@ -42,56 +42,70 @@
           </div>
         </el-header>
         <el-main class="main-content">
-          <el-row :gutter="20" class="stat-row">
-            <el-col :span="8">
+          <el-row :gutter="20" class="stats-row">
+            <el-col :span="6">
               <el-card class="stat-card">
-                <div class="stat-icon pending-icon">
-                  <el-icon size="30"><Clock /></el-icon>
-                </div>
                 <div class="stat-content">
-                  <div class="stat-value">5</div>
-                  <div class="stat-label">待处理订单</div>
+                  <div class="stat-value">{{ containers.length }}</div>
+                  <div class="stat-label">总集装箱数</div>
                 </div>
               </el-card>
             </el-col>
-            <el-col :span="8">
+            <el-col :span="6">
               <el-card class="stat-card">
-                <div class="stat-icon progress-icon">
-                  <el-icon size="30"><Loading /></el-icon>
-                </div>
                 <div class="stat-content">
-                  <div class="stat-value">8</div>
-                  <div class="stat-label">进行中订单</div>
+                  <div class="stat-value">{{ occupiedCount }}</div>
+                  <div class="stat-label">使用中</div>
                 </div>
               </el-card>
             </el-col>
-            <el-col :span="8">
+            <el-col :span="6">
               <el-card class="stat-card">
-                <div class="stat-icon success-icon">
-                  <el-icon size="30"><SuccessFilled /></el-icon>
-                </div>
                 <div class="stat-content">
-                  <div class="stat-value">23</div>
-                  <div class="stat-label">已完成订单</div>
+                  <div class="stat-value">{{ emptyCount }}</div>
+                  <div class="stat-label">空闲</div>
+                </div>
+              </el-card>
+            </el-col>
+            <el-col :span="6">
+              <el-card class="stat-card">
+                <div class="stat-content">
+                  <div class="stat-value">{{ transitCount }}</div>
+                  <div class="stat-label">运输中</div>
                 </div>
               </el-card>
             </el-col>
           </el-row>
 
-          <el-card class="recent-orders">
+          <el-card class="containers-card">
             <template #header>
-              <span>最近订单</span>
+              <div class="card-header">
+                <span>集装箱列表</span>
+                <el-select v-model="statusFilter" placeholder="筛选状态" style="width: 150px;">
+                  <el-option label="全部" value="" />
+                  <el-option label="空闲" value="空闲" />
+                  <el-option label="使用中" value="使用中" />
+                  <el-option label="运输中" value="运输中" />
+                </el-select>
+              </div>
             </template>
-            <el-table :data="recentOrders" stripe>
-              <el-table-column prop="orderNumber" label="订单号" />
-              <el-table-column prop="createTime" label="创建时间" />
+            <el-table :data="filteredContainers" stripe>
+              <el-table-column prop="containerNumber" label="集装箱编号" />
+              <el-table-column prop="type" label="类型" />
+              <el-table-column prop="size" label="尺寸" />
+              <el-table-column prop="weight" label="载重(吨)" />
+              <el-table-column prop="currentPort" label="当前位置" />
               <el-table-column prop="status" label="状态">
                 <template #default="{ row }">
                   <el-tag :type="getStatusType(row.status)">{{ row.status }}</el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="startPort" label="起始港口" />
-              <el-table-column prop="endPort" label="目的港口" />
+              <el-table-column prop="orderNumber" label="关联订单" />
+              <el-table-column label="操作">
+                <template #default="{ row }">
+                  <el-button type="primary" size="small" @click="handleViewDetail(row)">详情</el-button>
+                </template>
+              </el-table-column>
             </el-table>
           </el-card>
         </el-main>
@@ -101,23 +115,33 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { HomeFilled, Document, Van, Box, Clock, Loading, SuccessFilled, Message } from '@element-plus/icons-vue'
+import { HomeFilled, Document, Van, Box, Message } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
-const activeMenu = ref('dashboard')
+const activeMenu = ref('containers')
+const statusFilter = ref('')
 
-const recentOrders = ref([])
+const containers = ref([])
+
+const filteredContainers = computed(() => {
+  if (!statusFilter.value) return containers.value
+  return containers.value.filter(item => item.status === statusFilter.value)
+})
+
+const occupiedCount = computed(() => containers.value.filter(c => c.status === '使用中').length)
+const emptyCount = computed(() => containers.value.filter(c => c.status === '空闲').length)
+const transitCount = computed(() => containers.value.filter(c => c.status === '运输中').length)
 
 const getStatusType = (status) => {
   const statusMap = {
-    '待处理': 'warning',
-    '进行中': 'primary',
-    '已完成': 'success'
+    '空闲': 'success',
+    '使用中': 'primary',
+    '运输中': 'warning'
   }
   return statusMap[status] || 'info'
 }
@@ -137,6 +161,10 @@ const handleMenuSelect = (index) => {
       router.push(targetPath).catch(() => {})
     }
   }
+}
+
+const handleViewDetail = (row) => {
+  ElMessage.info(`查看集装箱详情: ${row.containerNumber}`)
 }
 
 const handleLogout = () => {
@@ -186,58 +214,40 @@ const handleLogout = () => {
 
 .main-content {
   background-color: #f5f7fa;
+  padding: 20px;
 }
 
-.stat-row {
+.stats-row {
   margin-bottom: 20px;
 }
 
 .stat-card {
-  display: flex;
-  align-items: center;
-  padding: 20px;
-}
-
-.stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 20px;
-  color: white;
-}
-
-.pending-icon {
-  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-}
-
-.progress-icon {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.success-icon {
-  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  text-align: center;
 }
 
 .stat-content {
-  flex: 1;
+  padding: 10px;
 }
 
 .stat-value {
   font-size: 28px;
   font-weight: bold;
   color: #303133;
-  margin-bottom: 5px;
 }
 
 .stat-label {
   font-size: 14px;
   color: #909399;
+  margin-top: 5px;
 }
 
-.recent-orders {
-  margin-top: 20px;
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.containers-card {
+  margin-bottom: 20px;
 }
 </style>

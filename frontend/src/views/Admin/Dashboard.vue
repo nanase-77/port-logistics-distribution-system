@@ -9,6 +9,7 @@
           background-color="#304156"
           text-color="#bfcbd9"
           active-text-color="#409eff"
+          @select="handleMenuSelect"
         >
           <el-menu-item index="dashboard">
             <el-icon><DataAnalysis /></el-icon>
@@ -29,6 +30,14 @@
           <el-menu-item index="ships">
             <el-icon><Van /></el-icon>
             <span>船舶管理</span>
+          </el-menu-item>
+          <el-menu-item index="report">
+            <el-icon><PieChart /></el-icon>
+            <span>数据报表</span>
+          </el-menu-item>
+          <el-menu-item index="ai">
+            <el-icon><Message /></el-icon>
+            <span>AI助手</span>
           </el-menu-item>
         </el-menu>
       </el-aside>
@@ -98,11 +107,30 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { DataAnalysis, User, Document, Location, Van } from '@element-plus/icons-vue'
+import { DataAnalysis, User, Document, Location, Van, PieChart, Message } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 const activeMenu = ref('dashboard')
+
+const handleMenuSelect = (index) => {
+  activeMenu.value = index
+  const routeMap = {
+    'dashboard': '/admin/dashboard',
+    'users': '/admin/users',
+    'orders': '/admin/orders',
+    'ports': '/admin/ports',
+    'ships': '/admin/ships',
+    'report': '/admin/report',
+    'ai': '/ai/chat'
+  }
+  if (routeMap[index]) {
+    const targetPath = routeMap[index]
+    if (router.currentRoute.value.path !== targetPath) {
+      router.push(targetPath).catch(() => {})
+    }
+  }
+}
 
 const handleLogout = () => {
   userStore.logout()

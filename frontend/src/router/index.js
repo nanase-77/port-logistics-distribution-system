@@ -25,9 +25,63 @@ const routes = [
     meta: { requiresAuth: true, role: 'admin' }
   },
   {
+    path: '/admin/users',
+    name: 'AdminUsers',
+    component: () => import('@/views/Admin/Users.vue'),
+    meta: { requiresAuth: true, role: 'admin' }
+  },
+  {
+    path: '/admin/orders',
+    name: 'AdminOrders',
+    component: () => import('@/views/Admin/Orders.vue'),
+    meta: { requiresAuth: true, role: 'admin' }
+  },
+  {
+    path: '/admin/ports',
+    name: 'AdminPorts',
+    component: () => import('@/views/Admin/Ports.vue'),
+    meta: { requiresAuth: true, role: 'admin' }
+  },
+  {
+    path: '/admin/ships',
+    name: 'AdminShips',
+    component: () => import('@/views/Admin/Ships.vue'),
+    meta: { requiresAuth: true, role: 'admin' }
+  },
+  {
+    path: '/admin/report',
+    name: 'AdminReport',
+    component: () => import('@/views/Statistics/Report.vue'),
+    meta: { requiresAuth: true, role: 'admin' }
+  },
+  {
+    path: '/ai/chat',
+    name: 'AIChat',
+    component: () => import('@/views/AIAgent/Chat.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/customer/dashboard',
     name: 'CustomerDashboard',
     component: () => import('@/views/Customer/Dashboard.vue'),
+    meta: { requiresAuth: true, role: 'user' }
+  },
+  {
+    path: '/customer/orders',
+    name: 'CustomerOrders',
+    component: () => import('@/views/Customer/Orders.vue'),
+    meta: { requiresAuth: true, role: 'user' }
+  },
+  {
+    path: '/customer/logistics',
+    name: 'CustomerLogistics',
+    component: () => import('@/views/Customer/Logistics.vue'),
+    meta: { requiresAuth: true, role: 'user' }
+  },
+  {
+    path: '/customer/containers',
+    name: 'CustomerContainers',
+    component: () => import('@/views/Customer/Containers.vue'),
     meta: { requiresAuth: true, role: 'user' }
   }
 ]

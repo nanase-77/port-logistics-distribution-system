@@ -6,6 +6,23 @@
           <span>港口物流分配系统</span>
         </div>
       </template>
+      
+      <!-- 登录类型切换 -->
+      <div class="login-type-tabs">
+        <div 
+          :class="['tab-item', { active: loginType === 'admin' }]" 
+          @click="loginType = 'admin'"
+        >
+          管理员登录
+        </div>
+        <div 
+          :class="['tab-item', { active: loginType === 'user' }]" 
+          @click="loginType = 'user'"
+        >
+          用户登录
+        </div>
+      </div>
+      
       <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules" label-width="80px">
         <el-form-item label="用户名" prop="username">
           <el-input v-model="loginForm.username" placeholder="请输入用户名" />
@@ -38,6 +55,7 @@ const router = useRouter()
 const userStore = useUserStore()
 const loginFormRef = ref()
 const loading = ref(false)
+const loginType = ref('user') // 'admin' 或 'user'
 
 const loginForm = reactive({
   username: '',
@@ -61,6 +79,18 @@ const handleLogin = async () => {
       loading.value = true
       try {
         const result = await login(loginForm)
+        
+        // 检查选择的登录类型与实际用户角色是否匹配
+        if (loginType.value === 'admin' && result.role !== 'admin') {
+          ElMessage.error('请使用管理员账号登录')
+          return
+        }
+        
+        if (loginType.value === 'user' && result.role === 'admin') {
+          ElMessage.error('请使用普通用户账号登录')
+          return
+        }
+        
         userStore.login(result)
         ElMessage.success('登录成功')
         if (result.role === 'admin') {
@@ -84,7 +114,10 @@ const handleLogin = async () => {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-image: url('./hsh.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
 .login-card {
@@ -96,6 +129,43 @@ const handleLogin = async () => {
   font-size: 20px;
   font-weight: bold;
   color: #333;
+}
+
+/* 登录类型切换标签 */
+.login-type-tabs {
+  display: flex;
+  border-bottom: 1px solid #e4e7ed;
+  margin-bottom: 20px;
+}
+
+.tab-item {
+  flex: 1;
+  text-align: center;
+  padding: 12px 0;
+  font-size: 16px;
+  color: #606266;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s;
+}
+
+.tab-item:hover {
+  color: #409eff;
+}
+
+.tab-item.active {
+  color: #409eff;
+  font-weight: bold;
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background-color: #409eff;
 }
 
 .link-container {
