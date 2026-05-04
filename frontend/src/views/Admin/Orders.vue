@@ -1,110 +1,74 @@
 <template>
-  <div class="dashboard-container">
-    <el-container>
-      <el-aside width="200px" class="sidebar">
-        <div class="sidebar-title">管理员后台</div>
-        <el-menu
-          :default-active="activeMenu"
-          class="sidebar-menu"
-          background-color="#304156"
-          text-color="#bfcbd9"
-          active-text-color="#409eff"
-          @select="handleMenuSelect"
-        >
-          <el-menu-item index="dashboard">
-            <el-icon><DataAnalysis /></el-icon>
-            <span>数据概览</span>
-          </el-menu-item>
-          <el-menu-item index="users">
-            <el-icon><User /></el-icon>
-            <span>用户管理</span>
-          </el-menu-item>
-          <el-menu-item index="orders">
-            <el-icon><Document /></el-icon>
-            <span>订单管理</span>
-          </el-menu-item>
-          <el-menu-item index="ports">
-            <el-icon><Location /></el-icon>
-            <span>港口管理</span>
-          </el-menu-item>
-          <el-menu-item index="ships">
-            <el-icon><Van /></el-icon>
-            <span>船舶管理</span>
-          </el-menu-item>
-          <el-menu-item index="report">
-            <el-icon><PieChart /></el-icon>
-            <span>数据报表</span>
-          </el-menu-item>
-          <el-menu-item index="ai">
-            <el-icon><Message /></el-icon>
-            <span>AI助手</span>
-          </el-menu-item>
-        </el-menu>
-      </el-aside>
-      <el-container>
-        <el-header class="header">
-          <div></div>
-          <div class="user-info">
-            <span>欢迎，{{ userStore.username }} (管理员)</span>
-            <el-button type="danger" size="small" @click="handleLogout">退出登录</el-button>
-          </div>
-        </el-header>
-        <el-main class="main-content">
-          <el-card class="orders-card">
-            <template #header>
-              <div class="card-header">
-                <span>订单管理</span>
-                <el-button type="primary" size="small" @click="openAddModal">新建订单</el-button>
-              </div>
-            </template>
-            <el-table :data="orders" stripe>
-              <el-table-column prop="orderNumber" label="订单号" />
-              <el-table-column prop="createTime" label="创建时间" />
-              <el-table-column prop="status" label="状态">
-                <template #default="{ row }">
-                  <el-tag :type="getStatusType(row.status)">{{ row.status }}</el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column prop="startPort" label="起始港口" />
-              <el-table-column prop="endPort" label="目的港口" />
-              <el-table-column prop="cargoType" label="货物类型" />
-              <el-table-column prop="weight" label="重量(吨)" />
-              <el-table-column prop="owner" label="货主" />
-              <el-table-column label="操作">
-                <template #default="{ row }">
-                  <el-button type="primary" size="small" @click="openEditModal(row)">编辑</el-button>
-                  <el-button v-if="row.status === '待处理'" type="success" size="small" @click="handleApprove(row)">审核通过</el-button>
-                  <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-card>
-        </el-main>
-      </el-container>
-    </el-container>
+  <div>
+    <el-card class="search-card">
+      <el-input 
+        v-model="searchOrderNumber" 
+        placeholder="输入订单号查询" 
+        style="width: 300px;"
+        @keyup.enter="handleSearch"
+      >
+        <template #append>
+          <el-button @click="handleSearch">搜索</el-button>
+        </template>
+      </el-input>
+    </el-card>
 
-    <el-dialog :title="isEdit ? '编辑订单' : '新建订单'" :visible.sync="showModal">
-      <el-form :model="form" label-width="80px">
+    <el-card class="table-card">
+      <template #header>
+        <div class="card-header">
+          <span>订单管理</span>
+          <div class="header-actions">
+            <el-select v-model="statusFilter" placeholder="筛选状态" style="width: 140px; margin-right: 10px;">
+              <el-option label="全部" value="" />
+              <el-option label="待处理" value="待处理" />
+              <el-option label="进行中" value="进行中" />
+              <el-option label="已完成" value="已完成" />
+            </el-select>
+            <el-button type="primary" @click="openAddModal">新增订单</el-button>
+          </div>
+        </div>
+      </template>
+      <el-table :data="filteredOrders" stripe>
+        <el-table-column prop="id" label="ID" width="60" />
+        <el-table-column prop="orderNumber" label="订单号" width="160" />
+        <el-table-column label="用户" width="120">
+          <template #default="{ row }">{{ getUsername(row.userId) }}</template>
+        </el-table-column>
+        <el-table-column prop="status" label="状态" width="100">
+          <template #default="{ row }">
+            <el-tag :type="getStatusType(row.status)">{{ row.status }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="关联集装箱" width="200">
+          <template #default="{ row }">{{ getContainerContents(row.containerIds) }}</template>
+        </el-table-column>
+        <el-table-column prop="createTime" label="创建时间" width="180" />
+        <el-table-column label="操作" min-width="280">
+          <template #default="{ row }">
+            <el-button type="primary" size="small" @click="openEditModal(row)">编辑</el-button>
+            <el-button v-if="row.status === '待处理'" type="success" size="small" @click="handleAudit(row)">审核通过</el-button>
+            <el-button v-if="row.status === '进行中'" type="warning" size="small" @click="handleComplete(row)">标记完成</el-button>
+            <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
+    <el-dialog v-model="showModal" :title="isEdit ? '编辑订单' : '新增订单'" width="600px">
+      <el-form :model="form" label-width="100px">
         <el-form-item label="订单号">
-          <el-input v-model="form.orderNumber" :disabled="isEdit" />
+          <el-input v-model="form.orderNumber" :disabled="isEdit" placeholder="请输入订单号" />
         </el-form-item>
-        <el-form-item label="起始港口">
-          <el-input v-model="form.startPort" />
+        <el-form-item label="用户">
+          <el-select v-model="form.userId" style="width: 100%;">
+            <el-option v-for="user in users" :key="user.id" :label="user.username" :value="user.id" />
+          </el-select>
         </el-form-item>
-        <el-form-item label="目的港口">
-          <el-input v-model="form.endPort" />
+        <el-form-item label="关联集装箱">
+          <el-input v-model="form.containerIds" placeholder="请输入集装箱ID，多个用逗号分隔" />
         </el-form-item>
-        <el-form-item label="货物类型">
-          <el-input v-model="form.cargoType" />
-        </el-form-item>
-        <el-form-item label="重量(吨)">
-          <el-input type="number" v-model="form.weight" />
-        </el-form-item>
-        <el-form-item label="货主">
-          <el-input v-model="form.owner" />
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="form.status">
+        <el-form-item label="订单状态">
+          <el-select v-model="form.status" style="width: 100%;">
             <el-option label="待处理" value="待处理" />
             <el-option label="进行中" value="进行中" />
             <el-option label="已完成" value="已完成" />
@@ -120,137 +84,165 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { useUserStore } from '@/stores/user'
-import { DataAnalysis, User, Document, Location, Van, PieChart, Message } from '@element-plus/icons-vue'
 
-const router = useRouter()
-const userStore = useUserStore()
-const activeMenu = ref('orders')
 const showModal = ref(false)
 const isEdit = ref(false)
+const statusFilter = ref('')
+const searchOrderNumber = ref('')
+
+const users = ref([])
+
+const containers = ref([])
 
 const orders = ref([])
 
-const form = reactive({
-  orderNumber: '',
-  createTime: '',
-  status: '待处理',
-  startPort: '',
-  endPort: '',
-  cargoType: '',
-  weight: 0,
-  owner: ''
-})
-
-const getStatusType = (status) => {
-  const statusMap = { '待处理': 'warning', '进行中': 'primary', '已完成': 'success' }
-  return statusMap[status] || 'info'
+const getUsername = (userId) => {
+  const user = users.value.find(u => u.id === userId)
+  return user ? user.username : '未知用户'
 }
 
-const handleMenuSelect = (index) => {
-  activeMenu.value = index
-  const routeMap = {
-    'dashboard': '/admin/dashboard',
-    'users': '/admin/users',
-    'orders': '/admin/orders',
-    'ports': '/admin/ports',
-    'ships': '/admin/ships',
-    'report': '/admin/report',
-    'ai': '/ai/chat'
+const getContainerContents = (containerIds) => {
+  if (!containerIds) return ''
+  const ids = containerIds.split(',').map(id => parseInt(id))
+  const contents = ids.map(id => {
+    const container = containers.value.find(c => c.id === id)
+    return container ? container.content : `集装箱${id}`
+  })
+  return contents.join(', ')
+}
+
+const filteredOrders = computed(() => {
+  let result = orders.value
+  if (statusFilter.value) {
+    result = result.filter(item => item.status === statusFilter.value)
   }
-  if (routeMap[index]) {
-    const targetPath = routeMap[index]
-    if (router.currentRoute.value.path !== targetPath) {
-      router.push(targetPath).catch(() => {})
+  if (searchOrderNumber.value) {
+    result = result.filter(item => item.orderNumber.includes(searchOrderNumber.value))
+  }
+  return result
+})
+
+const handleSearch = () => {
+  if (searchOrderNumber.value) {
+    const found = orders.value.find(item => item.orderNumber.includes(searchOrderNumber.value))
+    if (!found) {
+      ElMessage.warning('未找到该订单')
     }
   }
 }
 
+const form = reactive({
+  id: null,
+  orderNumber: '',
+  userId: 1,
+  containerIds: '',
+  status: '待处理'
+})
+
+const getStatusType = (status) => {
+  const statusMap = {
+    '待处理': 'warning',
+    '进行中': 'primary',
+    '已完成': 'success'
+  }
+  return statusMap[status] || 'info'
+}
+
+const resetForm = () => {
+  form.id = null
+  form.orderNumber = ''
+  form.userId = 1
+  form.containerIds = ''
+  form.status = '待处理'
+}
+
 const openAddModal = () => {
   isEdit.value = false
-  form.orderNumber = 'ORD' + Date.now().toString().slice(-9)
-  form.createTime = new Date().toLocaleString('zh-CN')
-  form.status = '待处理'
-  form.startPort = ''
-  form.endPort = ''
-  form.cargoType = ''
-  form.weight = 0
-  form.owner = ''
+  resetForm()
   showModal.value = true
 }
 
 const openEditModal = (row) => {
   isEdit.value = true
+  form.id = row.id
   form.orderNumber = row.orderNumber
-  form.createTime = row.createTime
+  form.userId = row.userId
+  form.containerIds = row.containerIds
   form.status = row.status
-  form.startPort = row.startPort
-  form.endPort = row.endPort
-  form.cargoType = row.cargoType
-  form.weight = row.weight
-  form.owner = row.owner
   showModal.value = true
 }
 
 const handleSave = () => {
-  if (!form.startPort || !form.endPort || !form.cargoType || !form.owner) {
-    ElMessage.warning('请填写完整信息')
+  if (!form.orderNumber) {
+    ElMessage.warning('请输入订单号')
     return
   }
   if (isEdit.value) {
-    const index = orders.value.findIndex(o => o.orderNumber === form.orderNumber)
-    if (index !== -1) {
-      orders.value[index] = { ...orders.value[index], ...form }
+    const idx = orders.value.findIndex(o => o.id === form.id)
+    if (idx !== -1) {
+      orders.value[idx] = {
+        ...orders.value[idx],
+        userId: form.userId,
+        containerIds: form.containerIds,
+        status: form.status
+      }
     }
     ElMessage.success('订单信息已更新')
   } else {
-    orders.value.unshift({ ...form })
-    ElMessage.success('订单创建成功')
+    orders.value.push({
+      id: orders.value.length > 0 ? Math.max(...orders.value.map(o => o.id)) + 1 : 1,
+      orderNumber: form.orderNumber,
+      userId: form.userId,
+      containerIds: form.containerIds,
+      status: form.status,
+      createTime: new Date().toISOString().replace('T', ' ').substring(0, 19)
+    })
+    ElMessage.success('订单已创建')
   }
   showModal.value = false
 }
 
-const handleApprove = (row) => {
+const handleAudit = (row) => {
   row.status = '进行中'
-  ElMessage.success('订单已审核通过')
+  ElMessage.success(`订单 ${row.orderNumber} 已审核通过`)
 }
 
-const handleDelete = async (row) => {
-  try {
-    await ElMessageBox.confirm('确定要删除该订单吗？', '提示', { type: 'warning' })
+const handleComplete = (row) => {
+  row.status = '已完成'
+  ElMessage.success(`订单 ${row.orderNumber} 已标记完成`)
+}
+
+const handleDelete = (row) => {
+  ElMessageBox.confirm(`确定要删除订单 "${row.orderNumber}" 吗？`, '确认删除', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
     orders.value = orders.value.filter(o => o.orderNumber !== row.orderNumber)
-    ElMessage.success('删除成功')
-  } catch {
-    ElMessage.info('已取消删除')
-  }
-}
-
-const handleLogout = () => {
-  userStore.logout()
-  ElMessage.success('已退出登录')
-  router.push('/login')
+    ElMessage.success('订单已删除')
+  }).catch(() => {})
 }
 </script>
 
 <style scoped>
-.dashboard-container { height: 100vh; }
-.sidebar { background-color: #304156; }
-.sidebar-title {
-  height: 60px; line-height: 60px; text-align: center;
-  color: white; font-size: 18px; font-weight: bold;
-  background-color: #263445;
+.search-card {
+  margin-bottom: 20px;
 }
-.sidebar-menu { border: none; }
-.header {
-  display: flex; justify-content: space-between; align-items: center;
-  background-color: white; border-bottom: 1px solid #e4e7ed;
-  padding: 0 20px;
+
+.table-card {
+  margin-bottom: 20px;
 }
-.user-info { display: flex; align-items: center; gap: 15px; }
-.main-content { background-color: #f5f7fa; padding: 20px; }
-.card-header { display: flex; justify-content: space-between; align-items: center; }
-.orders-card { margin-bottom: 20px; }
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+}
 </style>

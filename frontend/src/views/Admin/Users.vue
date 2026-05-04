@@ -1,110 +1,66 @@
 <template>
-  <div class="dashboard-container">
-    <el-container>
-      <el-aside width="200px" class="sidebar">
-        <div class="sidebar-title">管理员后台</div>
-        <el-menu
-          :default-active="activeMenu"
-          class="sidebar-menu"
-          background-color="#304156"
-          text-color="#bfcbd9"
-          active-text-color="#409eff"
-          @select="handleMenuSelect"
-        >
-          <el-menu-item index="dashboard">
-            <el-icon><DataAnalysis /></el-icon>
-            <span>数据概览</span>
-          </el-menu-item>
-          <el-menu-item index="users">
-            <el-icon><User /></el-icon>
-            <span>用户管理</span>
-          </el-menu-item>
-          <el-menu-item index="orders">
-            <el-icon><Document /></el-icon>
-            <span>订单管理</span>
-          </el-menu-item>
-          <el-menu-item index="ports">
-            <el-icon><Location /></el-icon>
-            <span>港口管理</span>
-          </el-menu-item>
-          <el-menu-item index="ships">
-            <el-icon><Van /></el-icon>
-            <span>船舶管理</span>
-          </el-menu-item>
-          <el-menu-item index="report">
-            <el-icon><PieChart /></el-icon>
-            <span>数据报表</span>
-          </el-menu-item>
-          <el-menu-item index="ai">
-            <el-icon><Message /></el-icon>
-            <span>AI助手</span>
-          </el-menu-item>
-        </el-menu>
-      </el-aside>
-      <el-container>
-        <el-header class="header">
-          <div></div>
-          <div class="user-info">
-            <span>欢迎，{{ userStore.username }} (管理员)</span>
-            <el-button type="danger" size="small" @click="handleLogout">退出登录</el-button>
-          </div>
-        </el-header>
-        <el-main class="main-content">
-          <el-card class="users-card">
-            <template #header>
-              <div class="card-header">
-                <span>用户管理</span>
-                <el-button type="primary" size="small" @click="openAddModal">新增用户</el-button>
-              </div>
-            </template>
-            <el-table :data="users" stripe>
-              <el-table-column prop="id" label="ID" />
-              <el-table-column prop="username" label="用户名" />
-              <el-table-column prop="email" label="邮箱" />
-              <el-table-column prop="role" label="角色">
-                <template #default="{ row }">
-                  <el-tag :type="row.role === 'admin' ? 'danger' : 'primary'">{{ row.role === 'admin' ? '管理员' : '普通用户' }}</el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column prop="status" label="状态">
-                <template #default="{ row }">
-                  <el-tag :type="row.status === 'active' ? 'success' : 'warning'">{{ row.status === 'active' ? '活跃' : '禁用' }}</el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column label="操作">
-                <template #default="{ row }">
-                  <el-button type="primary" size="small" @click="openEditModal(row)">编辑</el-button>
-                  <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-card>
-        </el-main>
-      </el-container>
-    </el-container>
+  <div>
+    <el-card class="search-card">
+      <el-input 
+        v-model="searchUsername" 
+        placeholder="输入用户名查询" 
+        style="width: 300px;"
+        @keyup.enter="handleSearch"
+      >
+        <template #append>
+          <el-button @click="handleSearch">搜索</el-button>
+        </template>
+      </el-input>
+    </el-card>
 
-    <el-dialog :title="isEdit ? '编辑用户' : '新增用户'" :visible.sync="showModal">
-      <el-form :model="form" label-width="80px">
+    <el-card class="table-card">
+      <template #header>
+        <div class="card-header">
+          <span>用户管理</span>
+          <el-button type="primary" @click="openAddModal">新增用户</el-button>
+        </div>
+      </template>
+      <el-table :data="filteredUsers" stripe>
+        <el-table-column prop="id" label="ID" width="60" />
+        <el-table-column prop="username" label="用户名" width="120" />
+        <el-table-column prop="phone" label="联系方式" width="140" />
+        <el-table-column prop="state" label="用户身份" width="100">
+          <template #default="{ row }">
+            <el-tag :type="row.state === 1 ? 'danger' : 'primary'">
+              {{ row.state === 1 ? '管理员' : '普通用户' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="country" label="所在国家" width="120" />
+        <el-table-column prop="createTime" label="创建时间" width="180" />
+        <el-table-column label="操作" width="200">
+          <template #default="{ row }">
+            <el-button type="primary" size="small" @click="openEditModal(row)">编辑</el-button>
+            <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
+    <el-dialog v-model="showModal" :title="isEdit ? '编辑用户' : '新增用户'" width="500px">
+      <el-form :model="form" label-width="100px">
         <el-form-item label="用户名">
-          <el-input v-model="form.username" />
+          <el-input v-model="form.username" placeholder="请输入用户名" />
         </el-form-item>
-        <el-form-item label="邮箱">
-          <el-input v-model="form.email" />
+        <el-form-item label="联系方式">
+          <el-input v-model="form.phone" placeholder="请输入电话" />
         </el-form-item>
-        <el-form-item label="密码">
-          <el-input type="password" v-model="form.password" />
+        <el-form-item v-if="!isEdit" label="密码">
+          <el-input v-model="form.password" type="password" placeholder="请输入密码" />
         </el-form-item>
-        <el-form-item label="角色">
-          <el-select v-model="form.role">
-            <el-option label="管理员" value="admin" />
-            <el-option label="普通用户" value="user" />
+        <el-form-item label="用户身份">
+          <el-select v-model="form.state" style="width: 100%;">
+            <el-option label="普通用户" :value="0" />
+            <el-option label="管理员" :value="1" />
           </el-select>
         </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="form.status">
-            <el-option label="活跃" value="active" />
-            <el-option label="禁用" value="disabled" />
-          </el-select>
+        <el-form-item label="所在国家">
+          <el-input v-model="form.country" placeholder="请输入所在国家" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -116,56 +72,50 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { useUserStore } from '@/stores/user'
-import { DataAnalysis, User, Document, Location, Van, PieChart, Message } from '@element-plus/icons-vue'
 
-const router = useRouter()
-const userStore = useUserStore()
-const activeMenu = ref('users')
 const showModal = ref(false)
 const isEdit = ref(false)
+const searchUsername = ref('')
 
 const users = ref([])
 
-const form = reactive({
-  id: null,
-  username: '',
-  email: '',
-  password: '',
-  role: 'user',
-  status: 'active'
+const filteredUsers = computed(() => {
+  if (!searchUsername.value) return users.value
+  return users.value.filter(item => item.username.includes(searchUsername.value))
 })
 
-const handleMenuSelect = (index) => {
-  activeMenu.value = index
-  const routeMap = {
-    'dashboard': '/admin/dashboard',
-    'users': '/admin/users',
-    'orders': '/admin/orders',
-    'ports': '/admin/ports',
-    'ships': '/admin/ships',
-    'report': '/admin/report',
-    'ai': '/ai/chat'
-  }
-  if (routeMap[index]) {
-    const targetPath = routeMap[index]
-    if (router.currentRoute.value.path !== targetPath) {
-      router.push(targetPath).catch(() => {})
+const handleSearch = () => {
+  if (searchUsername.value) {
+    const found = users.value.find(item => item.username.includes(searchUsername.value))
+    if (!found) {
+      ElMessage.warning('未找到该用户')
     }
   }
 }
 
-const openAddModal = () => {
-  isEdit.value = false
+const form = reactive({
+  id: null,
+  username: '',
+  phone: '',
+  password: '',
+  state: 0,
+  country: ''
+})
+
+const resetForm = () => {
   form.id = null
   form.username = ''
-  form.email = ''
+  form.phone = ''
   form.password = ''
-  form.role = 'user'
-  form.status = 'active'
+  form.state = 0
+  form.country = ''
+}
+
+const openAddModal = () => {
+  isEdit.value = false
+  resetForm()
   showModal.value = true
 }
 
@@ -173,72 +123,73 @@ const openEditModal = (row) => {
   isEdit.value = true
   form.id = row.id
   form.username = row.username
-  form.email = row.email
+  form.phone = row.phone
   form.password = ''
-  form.role = row.role
-  form.status = row.status
+  form.state = row.state
+  form.country = row.country
   showModal.value = true
 }
 
 const handleSave = () => {
-  if (!form.username || !form.email) {
-    ElMessage.warning('请填写用户名和邮箱')
+  if (!form.username || !form.phone) {
+    ElMessage.warning('请填写完整信息')
     return
   }
   if (!isEdit.value && !form.password) {
-    ElMessage.warning('请设置密码')
+    ElMessage.warning('请输入密码')
     return
   }
   if (isEdit.value) {
-    const index = users.value.findIndex(u => u.id === form.id)
-    if (index !== -1) {
-      users.value[index] = { ...users.value[index], ...form }
+    const idx = users.value.findIndex(u => u.id === form.id)
+    if (idx !== -1) {
+      users.value[idx] = {
+        ...users.value[idx],
+        username: form.username,
+        phone: form.phone,
+        state: form.state,
+        country: form.country
+      }
     }
     ElMessage.success('用户信息已更新')
   } else {
     const newUser = {
-      id: Date.now(),
-      ...form
+      id: users.value.length > 0 ? Math.max(...users.value.map(u => u.id)) + 1 : 1,
+      username: form.username,
+      phone: form.phone,
+      state: form.state,
+      country: form.country,
+      createTime: new Date().toISOString().replace('T', ' ').substring(0, 19)
     }
-    users.value.unshift(newUser)
-    ElMessage.success('用户添加成功')
+    users.value.push(newUser)
+    ElMessage.success('用户已创建')
   }
   showModal.value = false
 }
 
-const handleDelete = async (row) => {
-  try {
-    await ElMessageBox.confirm('确定要删除该用户吗？', '提示', { type: 'warning' })
+const handleDelete = (row) => {
+  ElMessageBox.confirm(`确定要删除用户 "${row.username}" 吗？`, '确认删除', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
     users.value = users.value.filter(u => u.id !== row.id)
-    ElMessage.success('删除成功')
-  } catch {
-    ElMessage.info('已取消删除')
-  }
-}
-
-const handleLogout = () => {
-  userStore.logout()
-  ElMessage.success('已退出登录')
-  router.push('/login')
+    ElMessage.success('用户已删除')
+  }).catch(() => {})
 }
 </script>
 
 <style scoped>
-.dashboard-container { height: 100vh; }
-.sidebar { background-color: #304156; }
-.sidebar-title {
-  height: 60px; line-height: 60px; text-align: center;
-  color: white; font-size: 18px; font-weight: bold;
-  background-color: #263445;
+.search-card {
+  margin-bottom: 20px;
 }
-.sidebar-menu { border: none; }
-.header {
-  display: flex; justify-content: space-between; align-items: center;
-  background-color: white; border-bottom: 1px solid #e4e7ed;
-  padding: 0 20px;
+
+.table-card {
+  margin-bottom: 20px;
 }
-.user-info { display: flex; align-items: center; gap: 15px; }
-.main-content { background-color: #f5f7fa; padding: 20px; }
-.card-header { display: flex; justify-content: space-between; align-items: center; }
-.users-card { margin-bottom: 20px; }
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 </style>

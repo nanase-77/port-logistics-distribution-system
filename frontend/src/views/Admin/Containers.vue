@@ -2,8 +2,8 @@
   <div>
     <el-card class="search-card">
       <el-input 
-        v-model="searchShipName" 
-        placeholder="输入船舶名称查询" 
+        v-model="searchContent" 
+        placeholder="输入货物描述查询" 
         style="width: 300px;"
         @keyup.enter="handleSearch"
       >
@@ -16,15 +16,16 @@
     <el-card class="table-card">
       <template #header>
         <div class="card-header">
-          <span>船舶管理</span>
+          <span>集装箱管理</span>
           <div class="header-actions">
-            <el-button type="primary" @click="openAddModal">新增船舶</el-button>
+            <el-button type="primary" @click="openAddModal">新增集装箱</el-button>
           </div>
         </div>
       </template>
-      <el-table :data="filteredShips" stripe>
+      <el-table :data="filteredContainers" stripe>
         <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column prop="name" label="船舶名称" width="160" />
+        <el-table-column prop="content" label="货物描述" width="200" />
+        <el-table-column prop="size" label="尺寸" width="100" />
         <el-table-column label="所属公司" width="160">
           <template #default="{ row }">{{ getCompanyName(row.companyId) }}</template>
         </el-table-column>
@@ -38,10 +39,16 @@
       </el-table>
     </el-card>
 
-    <el-dialog v-model="showModal" :title="isEdit ? '编辑船舶' : '新增船舶'" width="500px">
+    <el-dialog v-model="showModal" :title="isEdit ? '编辑集装箱' : '新增集装箱'" width="500px">
       <el-form :model="form" label-width="100px">
-        <el-form-item label="船舶名称">
-          <el-input v-model="form.name" placeholder="请输入船舶名称" />
+        <el-form-item label="货物描述">
+          <el-input v-model="form.content" placeholder="请输入货物描述" />
+        </el-form-item>
+        <el-form-item label="尺寸">
+          <el-select v-model="form.size" style="width: 100%;">
+            <el-option label="20英尺" value="20英尺" />
+            <el-option label="40英尺" value="40英尺" />
+          </el-select>
         </el-form-item>
         <el-form-item label="所属公司">
           <el-select v-model="form.companyId" style="width: 100%;">
@@ -63,40 +70,42 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 
 const showModal = ref(false)
 const isEdit = ref(false)
-const searchShipName = ref('')
+const searchContent = ref('')
 
 const companies = ref([])
 
-const ships = ref([])
+const containers = ref([])
 
 const getCompanyName = (companyId) => {
   const company = companies.value.find(c => c.id === companyId)
   return company ? company.name : `公司${companyId}`
 }
 
-const filteredShips = computed(() => {
-  if (!searchShipName.value) return ships.value
-  return ships.value.filter(item => item.name.includes(searchShipName.value))
+const filteredContainers = computed(() => {
+  if (!searchContent.value) return containers.value
+  return containers.value.filter(item => item.content.includes(searchContent.value))
 })
 
 const handleSearch = () => {
-  if (searchShipName.value) {
-    const found = ships.value.find(item => item.name.includes(searchShipName.value))
+  if (searchContent.value) {
+    const found = containers.value.find(item => item.content.includes(searchContent.value))
     if (!found) {
-      ElMessage.warning('未找到该船舶')
+      ElMessage.warning('未找到该集装箱')
     }
   }
 }
 
 const form = reactive({
   id: null,
-  name: '',
+  content: '',
+  size: '20英尺',
   companyId: 1
 })
 
 const resetForm = () => {
   form.id = null
-  form.name = ''
+  form.content = ''
+  form.size = '20英尺'
   form.companyId = 1
 }
 
@@ -109,46 +118,49 @@ const openAddModal = () => {
 const openEditModal = (row) => {
   isEdit.value = true
   form.id = row.id
-  form.name = row.name
+  form.content = row.content
+  form.size = row.size
   form.companyId = row.companyId
   showModal.value = true
 }
 
 const handleSave = () => {
-  if (!form.name) {
-    ElMessage.warning('请输入船舶名称')
+  if (!form.content) {
+    ElMessage.warning('请输入货物描述')
     return
   }
   if (isEdit.value) {
-    const idx = ships.value.findIndex(s => s.id === form.id)
+    const idx = containers.value.findIndex(c => c.id === form.id)
     if (idx !== -1) {
-      ships.value[idx] = {
-        ...ships.value[idx],
-        name: form.name,
+      containers.value[idx] = {
+        ...containers.value[idx],
+        content: form.content,
+        size: form.size,
         companyId: form.companyId
       }
     }
-    ElMessage.success('船舶信息已更新')
+    ElMessage.success('集装箱信息已更新')
   } else {
-    ships.value.push({
-      id: ships.value.length > 0 ? Math.max(...ships.value.map(s => s.id)) + 1 : 1,
-      name: form.name,
+    containers.value.push({
+      id: containers.value.length > 0 ? Math.max(...containers.value.map(c => c.id)) + 1 : 1,
+      content: form.content,
+      size: form.size,
       companyId: form.companyId,
       createTime: new Date().toISOString().replace('T', ' ').substring(0, 19)
     })
-    ElMessage.success('船舶已创建')
+    ElMessage.success('集装箱已创建')
   }
   showModal.value = false
 }
 
 const handleDelete = (row) => {
-  ElMessageBox.confirm(`确定要删除船舶 "${row.name}" 吗？`, '确认删除', {
+  ElMessageBox.confirm(`确定要删除集装箱 "${row.content}" 吗？`, '确认删除', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
   }).then(() => {
-    ships.value = ships.value.filter(s => s.id !== row.id)
-    ElMessage.success('船舶已删除')
+    containers.value = containers.value.filter(c => c.id !== row.id)
+    ElMessage.success('集装箱已删除')
   }).catch(() => {})
 }
 </script>

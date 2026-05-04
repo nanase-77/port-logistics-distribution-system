@@ -1,108 +1,56 @@
 <template>
-  <div class="dashboard-container">
-    <el-container>
-      <el-aside width="200px" class="sidebar">
-        <div class="sidebar-title">管理员后台</div>
-        <el-menu
-          :default-active="activeMenu"
-          class="sidebar-menu"
-          background-color="#304156"
-          text-color="#bfcbd9"
-          active-text-color="#409eff"
-          @select="handleMenuSelect"
-        >
-          <el-menu-item index="dashboard">
-            <el-icon><DataAnalysis /></el-icon>
-            <span>数据概览</span>
-          </el-menu-item>
-          <el-menu-item index="users">
-            <el-icon><User /></el-icon>
-            <span>用户管理</span>
-          </el-menu-item>
-          <el-menu-item index="orders">
-            <el-icon><Document /></el-icon>
-            <span>订单管理</span>
-          </el-menu-item>
-          <el-menu-item index="ports">
-            <el-icon><Location /></el-icon>
-            <span>港口管理</span>
-          </el-menu-item>
-          <el-menu-item index="ships">
-            <el-icon><Van /></el-icon>
-            <span>船舶管理</span>
-          </el-menu-item>
-          <el-menu-item index="report">
-            <el-icon><PieChart /></el-icon>
-            <span>数据报表</span>
-          </el-menu-item>
-          <el-menu-item index="ai">
-            <el-icon><Message /></el-icon>
-            <span>AI助手</span>
-          </el-menu-item>
-        </el-menu>
-      </el-aside>
-      <el-container>
-        <el-header class="header">
-          <div></div>
-          <div class="user-info">
-            <span>欢迎，{{ userStore.username }} (管理员)</span>
-            <el-button type="danger" size="small" @click="handleLogout">退出登录</el-button>
-          </div>
-        </el-header>
-        <el-main class="main-content">
-          <el-card class="ports-card">
-            <template #header>
-              <div class="card-header">
-                <span>港口资源管理</span>
-                <el-button type="primary" size="small" @click="openAddModal">新增港口</el-button>
-              </div>
-            </template>
-            <el-table :data="ports" stripe>
-              <el-table-column prop="id" label="ID" />
-              <el-table-column prop="name" label="港口名称" />
-              <el-table-column prop="location" label="地理位置" />
-              <el-table-column prop="berthCount" label="泊位数" />
-              <el-table-column prop="maxWaterDepth" label="最大水深(m)" />
-              <el-table-column prop="yardCapacity" label="堆场容量(万TEU)" />
-              <el-table-column prop="status" label="状态">
-                <template #default="{ row }">
-                  <el-tag :type="row.status === 'active' ? 'success' : 'warning'">{{ row.status === 'active' ? '运营中' : '维护中' }}</el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column label="操作">
-                <template #default="{ row }">
-                  <el-button type="primary" size="small" @click="openEditModal(row)">编辑</el-button>
-                  <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-card>
-        </el-main>
-      </el-container>
-    </el-container>
+  <div>
+    <el-card class="search-card">
+      <el-input 
+        v-model="searchPortName" 
+        placeholder="输入港口名称查询" 
+        style="width: 300px;"
+        @keyup.enter="handleSearch"
+      >
+        <template #append>
+          <el-button @click="handleSearch">搜索</el-button>
+        </template>
+      </el-input>
+    </el-card>
 
-    <el-dialog :title="isEdit ? '编辑港口' : '新增港口'" :visible.sync="showModal">
-      <el-form :model="form" label-width="120px">
+    <el-card class="table-card">
+      <template #header>
+        <div class="card-header">
+          <span>港口资源管理</span>
+          <div class="header-actions">
+            <el-button type="primary" @click="openAddModal">新增港口</el-button>
+          </div>
+        </div>
+      </template>
+      <el-table :data="filteredPorts" stripe>
+        <el-table-column prop="id" label="ID" width="60" />
+        <el-table-column prop="name" label="港口名称" width="140" />
+        <el-table-column prop="longitude" label="经度" width="120" />
+        <el-table-column prop="latitude" label="纬度" width="120" />
+        <el-table-column prop="country" label="所在国家" width="120" />
+        <el-table-column prop="createTime" label="创建时间" width="180" />
+        <el-table-column label="操作" width="200">
+          <template #default="{ row }">
+            <el-button type="primary" size="small" @click="openEditModal(row)">编辑</el-button>
+            <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
+    <el-dialog v-model="showModal" :title="isEdit ? '编辑港口' : '新增港口'" width="500px">
+      <el-form :model="form" label-width="100px">
         <el-form-item label="港口名称">
-          <el-input v-model="form.name" />
+          <el-input v-model="form.name" placeholder="请输入港口名称" />
         </el-form-item>
-        <el-form-item label="地理位置">
-          <el-input v-model="form.location" />
+        <el-form-item label="经度">
+          <el-input-number v-model="form.longitude" :precision="6" :step="0.01" style="width: 100%;" />
         </el-form-item>
-        <el-form-item label="泊位数">
-          <el-input type="number" v-model="form.berthCount" />
+        <el-form-item label="纬度">
+          <el-input-number v-model="form.latitude" :precision="6" :step="0.01" style="width: 100%;" />
         </el-form-item>
-        <el-form-item label="最大水深(m)">
-          <el-input type="number" v-model="form.maxWaterDepth" />
-        </el-form-item>
-        <el-form-item label="堆场容量(万TEU)">
-          <el-input type="number" v-model="form.yardCapacity" />
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="form.status">
-            <el-option label="运营中" value="active" />
-            <el-option label="维护中" value="maintenance" />
-          </el-select>
+        <el-form-item label="所在国家">
+          <el-input v-model="form.country" placeholder="请输入所在国家" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -114,58 +62,48 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { useUserStore } from '@/stores/user'
-import { DataAnalysis, User, Document, Location, Van, PieChart, Message } from '@element-plus/icons-vue'
 
-const router = useRouter()
-const userStore = useUserStore()
-const activeMenu = ref('ports')
 const showModal = ref(false)
 const isEdit = ref(false)
+const searchPortName = ref('')
 
 const ports = ref([])
 
-const form = reactive({
-  id: null,
-  name: '',
-  location: '',
-  berthCount: 0,
-  maxWaterDepth: 0,
-  yardCapacity: 0,
-  status: 'active'
+const filteredPorts = computed(() => {
+  if (!searchPortName.value) return ports.value
+  return ports.value.filter(item => item.name.includes(searchPortName.value))
 })
 
-const handleMenuSelect = (index) => {
-  activeMenu.value = index
-  const routeMap = {
-    'dashboard': '/admin/dashboard',
-    'users': '/admin/users',
-    'orders': '/admin/orders',
-    'ports': '/admin/ports',
-    'ships': '/admin/ships',
-    'report': '/admin/report',
-    'ai': '/ai/chat'
-  }
-  if (routeMap[index]) {
-    const targetPath = routeMap[index]
-    if (router.currentRoute.value.path !== targetPath) {
-      router.push(targetPath).catch(() => {})
+const handleSearch = () => {
+  if (searchPortName.value) {
+    const found = ports.value.find(item => item.name.includes(searchPortName.value))
+    if (!found) {
+      ElMessage.warning('未找到该港口')
     }
   }
 }
 
-const openAddModal = () => {
-  isEdit.value = false
+const form = reactive({
+  id: null,
+  name: '',
+  longitude: 0,
+  latitude: 0,
+  country: ''
+})
+
+const resetForm = () => {
   form.id = null
   form.name = ''
-  form.location = ''
-  form.berthCount = 0
-  form.maxWaterDepth = 0
-  form.yardCapacity = 0
-  form.status = 'active'
+  form.longitude = 0
+  form.latitude = 0
+  form.country = ''
+}
+
+const openAddModal = () => {
+  isEdit.value = false
+  resetForm()
   showModal.value = true
 }
 
@@ -173,66 +111,72 @@ const openEditModal = (row) => {
   isEdit.value = true
   form.id = row.id
   form.name = row.name
-  form.location = row.location
-  form.berthCount = row.berthCount
-  form.maxWaterDepth = row.maxWaterDepth
-  form.yardCapacity = row.yardCapacity
-  form.status = row.status
+  form.longitude = row.longitude
+  form.latitude = row.latitude
+  form.country = row.country
   showModal.value = true
 }
 
 const handleSave = () => {
-  if (!form.name || !form.location) {
-    ElMessage.warning('请填写港口名称和位置')
+  if (!form.name || !form.country) {
+    ElMessage.warning('请填写完整信息')
     return
   }
   if (isEdit.value) {
-    const index = ports.value.findIndex(p => p.id === form.id)
-    if (index !== -1) {
-      ports.value[index] = { ...ports.value[index], ...form }
+    const idx = ports.value.findIndex(p => p.id === form.id)
+    if (idx !== -1) {
+      ports.value[idx] = {
+        ...ports.value[idx],
+        name: form.name,
+        longitude: form.longitude,
+        latitude: form.latitude,
+        country: form.country
+      }
     }
     ElMessage.success('港口信息已更新')
   } else {
-    const newPort = { id: Date.now(), ...form }
-    ports.value.unshift(newPort)
-    ElMessage.success('港口添加成功')
+    ports.value.push({
+      id: ports.value.length > 0 ? Math.max(...ports.value.map(p => p.id)) + 1 : 1,
+      name: form.name,
+      longitude: form.longitude,
+      latitude: form.latitude,
+      country: form.country,
+      createTime: new Date().toISOString().replace('T', ' ').substring(0, 19)
+    })
+    ElMessage.success('港口已创建')
   }
   showModal.value = false
 }
 
-const handleDelete = async (row) => {
-  try {
-    await ElMessageBox.confirm('确定要删除该港口吗？', '提示', { type: 'warning' })
+const handleDelete = (row) => {
+  ElMessageBox.confirm(`确定要删除港口 "${row.name}" 吗？`, '确认删除', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
     ports.value = ports.value.filter(p => p.id !== row.id)
-    ElMessage.success('删除成功')
-  } catch {
-    ElMessage.info('已取消删除')
-  }
-}
-
-const handleLogout = () => {
-  userStore.logout()
-  ElMessage.success('已退出登录')
-  router.push('/login')
+    ElMessage.success('港口已删除')
+  }).catch(() => {})
 }
 </script>
 
 <style scoped>
-.dashboard-container { height: 100vh; }
-.sidebar { background-color: #304156; }
-.sidebar-title {
-  height: 60px; line-height: 60px; text-align: center;
-  color: white; font-size: 18px; font-weight: bold;
-  background-color: #263445;
+.search-card {
+  margin-bottom: 20px;
 }
-.sidebar-menu { border: none; }
-.header {
-  display: flex; justify-content: space-between; align-items: center;
-  background-color: white; border-bottom: 1px solid #e4e7ed;
-  padding: 0 20px;
+
+.table-card {
+  margin-bottom: 20px;
 }
-.user-info { display: flex; align-items: center; gap: 15px; }
-.main-content { background-color: #f5f7fa; padding: 20px; }
-.card-header { display: flex; justify-content: space-between; align-items: center; }
-.ports-card { margin-bottom: 20px; }
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+}
 </style>
