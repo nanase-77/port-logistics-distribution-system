@@ -1,4 +1,4 @@
-package com.smu.portlogisticsdistributionsystem.controller;
+package com.smu.portlogisticsdistributionsystem.controller.admin;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.smu.portlogisticsdistributionsystem.common.Result;
@@ -11,35 +11,40 @@ import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-@Api(tags = "港口相关接口")
+@Api(tags = "管理员港口管理")
 @RestController
-@RequestMapping("/api/port")
+@RequestMapping("/api/admin/port")
 @CrossOrigin
-public class PortController {
+public class AdminPortController {
     @Autowired
     PortService portService;
+
     @GetMapping("/select")
-    @ApiOperation("查询港口")
-    public Page<Port> select(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize
-    , @RequestParam(required = false) @RequestBody PortQueryDTO portDTO){
-        return portService.select(pageNum,pageSize,portDTO);
+    @ApiOperation("查询所有港口")
+    public Result<Page<Port>> select(@RequestParam(defaultValue = "1") int pageNum,
+                                      @RequestParam(defaultValue = "10") int pageSize,
+                                      PortQueryDTO portQueryDTO) {
+        Page<Port> page = portService.select(pageNum, pageSize, portQueryDTO);
+        return Result.success(page);
     }
+
     @ApiOperation("添加港口")
     @PostMapping("/add")
-    public Result add(@RequestBody PortDTO portDTO){
+    public Result add(@RequestBody PortDTO portDTO) {
         portService.add(portDTO);
         return Result.success();
     }
+
     @ApiOperation("删除港口")
     @DeleteMapping("/delete/{ids}")
-    public Result delete(@PathVariable String ids){
+    public Result delete(@PathVariable String ids) {
         portService.delete(ids);
         return Result.success();
     }
+
     @ApiOperation("修改港口")
     @PutMapping("/update")
-    public Result update(@RequestBody PortDTO portDTO){
+    public Result update(@RequestBody PortDTO portDTO) {
         portService.update(portDTO);
         return Result.success();
     }

@@ -1,4 +1,4 @@
-package com.smu.portlogisticsdistributionsystem.controller;
+package com.smu.portlogisticsdistributionsystem.controller.admin;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.smu.portlogisticsdistributionsystem.common.Result;
@@ -11,19 +11,21 @@ import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-@Api(tags = "车辆相关接口")
+@Api(tags = "管理员车辆管理")
 @RestController
-@RequestMapping("/api/car")
+@RequestMapping("/api/admin/car")
 @CrossOrigin
-public class CarController {
+public class AdminCarController {
     @Autowired
     CarService carService;
 
     @GetMapping("/select")
-    @ApiOperation("查询车辆")
-    public Page<Car> select(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize,
-                           @RequestParam(required = false) @RequestBody CarQueryDTO carQueryDTO) {
-        return carService.select(pageNum, pageSize, carQueryDTO);
+    @ApiOperation("查询所有车辆")
+    public Result<Page<Car>> select(@RequestParam(defaultValue = "1") int pageNum,
+                                     @RequestParam(defaultValue = "10") int pageSize,
+                                     CarQueryDTO carQueryDTO) {
+        Page<Car> page = carService.select(pageNum, pageSize, carQueryDTO);
+        return Result.success(page);
     }
 
     @ApiOperation("添加车辆")

@@ -1,16 +1,15 @@
 package com.smu.portlogisticsdistributionsystem.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.smu.portlogisticsdistributionsystem.dto.ShipDTO;
-import com.smu.portlogisticsdistributionsystem.dto.ShipQueryDTO;
 import com.smu.portlogisticsdistributionsystem.entity.Ship;
 import com.smu.portlogisticsdistributionsystem.mapper.ShipMapper;
 import com.smu.portlogisticsdistributionsystem.service.ShipService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -19,15 +18,9 @@ import java.util.List;
 @Service
 public class ShipServiceImpl extends ServiceImpl<ShipMapper, Ship> implements ShipService {
     @Override
-    public Page<Ship> select(int pageNum, int pageSize, ShipQueryDTO shipQueryDTO) {
+    public Page<Ship> select(int pageNum, int pageSize) {
         Page<Ship> p = new Page<>(pageNum, pageSize);
-        QueryWrapper<Ship> q = new QueryWrapper<>();
-        if (StringUtils.hasText(shipQueryDTO.getShipName())) {
-            q.like("ship_name", shipQueryDTO.getShipName());
-        }
-        if (StringUtils.hasText(shipQueryDTO.getCompanyId())) {
-            q.eq("company_id", shipQueryDTO.getCompanyId());
-        }
+        LambdaQueryWrapper<Ship> q = new LambdaQueryWrapper<>();
         return baseMapper.selectPage(p, q);
     }
 

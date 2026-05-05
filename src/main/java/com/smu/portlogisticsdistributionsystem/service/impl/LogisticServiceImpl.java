@@ -68,4 +68,14 @@ public class LogisticServiceImpl extends ServiceImpl<LogisticMapper, Logistic> i
         logistic.setUpdateTime(LocalDateTime.now());
         baseMapper.updateById(logistic);
     }
+
+    @Override
+    public Page<Logistic> selectByOrderIds(int pageNum, int pageSize, List<Integer> orderIds) {
+        Page<Logistic> p = new Page<>(pageNum, pageSize);
+        QueryWrapper<Logistic> q = new QueryWrapper<>();
+        if (orderIds != null && !orderIds.isEmpty()) {
+            q.in("order_id", orderIds);
+        }
+        return baseMapper.selectPage(p, q);
+    }
 }

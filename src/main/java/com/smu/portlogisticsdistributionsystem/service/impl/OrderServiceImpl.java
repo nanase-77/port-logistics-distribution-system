@@ -22,14 +22,16 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     public Page<Order> select(int pageNum, int pageSize, OrderQueryDTO orderQueryDTO) {
         Page<Order> p = new Page<>(pageNum, pageSize);
         QueryWrapper<Order> q = new QueryWrapper<>();
-        if (StringUtils.hasText(orderQueryDTO.getOrderNumber())) {
-            q.like("order_number", orderQueryDTO.getOrderNumber());
-        }
-        if (orderQueryDTO.getUserId() != null) {
-            q.eq("user_id", orderQueryDTO.getUserId());
-        }
-        if (StringUtils.hasText(orderQueryDTO.getStatus())) {
-            q.eq("status", orderQueryDTO.getStatus());
+        if (orderQueryDTO != null) {
+            if (StringUtils.hasText(orderQueryDTO.getOrderNumber())) {
+                q.like("order_number", orderQueryDTO.getOrderNumber());
+            }
+            if (orderQueryDTO.getUserId() != null) {
+                q.eq("user_id", orderQueryDTO.getUserId());
+            }
+            if (StringUtils.hasText(orderQueryDTO.getStatus())) {
+                q.eq("status", orderQueryDTO.getStatus());
+            }
         }
         return baseMapper.selectPage(p, q);
     }
@@ -59,5 +61,23 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         BeanUtils.copyProperties(orderDTO, order);
         order.setUpdateTime(LocalDateTime.now());
         baseMapper.updateById(order);
+    }
+
+    @Override
+    public Page<Order> selectByUserId(int pageNum, int pageSize, Integer userId) {
+        Page<Order> p = new Page<>(pageNum, pageSize);
+        QueryWrapper<Order> q = new QueryWrapper<>();
+        q.eq("user_id", userId);
+        return baseMapper.selectPage(p, q);
+    }
+
+    @Override
+    public void addByUser(OrderDTO orderDTO, Integer userId) {
+        Order order = new Order();
+        BeanUtils.copyProperties(orderDTO, order);
+        order.setUserId(userId);
+        order.setCreateTime(LocalDateTime.now());
+        order.setUpdateTime(LocalDateTime.now());
+        baseMapper.insert(order);
     }
 }

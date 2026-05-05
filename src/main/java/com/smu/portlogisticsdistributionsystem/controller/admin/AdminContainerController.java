@@ -1,4 +1,4 @@
-package com.smu.portlogisticsdistributionsystem.controller;
+package com.smu.portlogisticsdistributionsystem.controller.admin;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.smu.portlogisticsdistributionsystem.common.Result;
@@ -11,19 +11,21 @@ import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-@Api(tags = "集装箱相关接口")
+@Api(tags = "管理员集装箱管理")
 @RestController
-@RequestMapping("/api/container")
+@RequestMapping("/api/admin/container")
 @CrossOrigin
-public class ContainerController {
+public class AdminContainerController {
     @Autowired
     ContainerService containerService;
 
     @GetMapping("/select")
-    @ApiOperation("查询集装箱")
-    public Page<Container> select(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize,
-                               @RequestParam(required = false) @RequestBody ContainerQueryDTO containerQueryDTO) {
-        return containerService.select(pageNum, pageSize, containerQueryDTO);
+    @ApiOperation("查询所有集装箱")
+    public Result<Page<Container>> select(@RequestParam(defaultValue = "1") int pageNum,
+                                           @RequestParam(defaultValue = "10") int pageSize,
+                                           ContainerQueryDTO containerQueryDTO) {
+        Page<Container> page = containerService.select(pageNum, pageSize, containerQueryDTO);
+        return Result.success(page);
     }
 
     @ApiOperation("添加集装箱")

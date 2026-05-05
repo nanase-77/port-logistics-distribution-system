@@ -1,9 +1,8 @@
-package com.smu.portlogisticsdistributionsystem.controller;
+package com.smu.portlogisticsdistributionsystem.controller.admin;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.smu.portlogisticsdistributionsystem.common.Result;
 import com.smu.portlogisticsdistributionsystem.dto.ShipDTO;
-import com.smu.portlogisticsdistributionsystem.dto.ShipQueryDTO;
 import com.smu.portlogisticsdistributionsystem.entity.Ship;
 import com.smu.portlogisticsdistributionsystem.service.ShipService;
 import io.swagger.annotations.Api;
@@ -11,19 +10,20 @@ import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-@Api(tags = "船舶相关接口")
+@Api(tags = "管理员船舶管理")
 @RestController
-@RequestMapping("/api/ship")
+@RequestMapping("/api/admin/ship")
 @CrossOrigin
-public class ShipController {
+public class AdminShipController {
     @Autowired
     ShipService shipService;
 
     @GetMapping("/select")
-    @ApiOperation("查询船舶")
-    public Page<Ship> select(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize,
-                               @RequestParam(required = false) @RequestBody ShipQueryDTO shipQueryDTO) {
-        return shipService.select(pageNum, pageSize, shipQueryDTO);
+    @ApiOperation("查询所有船舶")
+    public Result<Page<Ship>> select(@RequestParam(defaultValue = "1") int pageNum,
+                                     @RequestParam(defaultValue = "10") int pageSize) {
+        Page<Ship> page = shipService.select(pageNum, pageSize);
+        return Result.success(page);
     }
 
     @ApiOperation("添加船舶")
