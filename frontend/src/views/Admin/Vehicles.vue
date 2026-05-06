@@ -69,16 +69,38 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getVehicles, addVehicle, updateVehicle, deleteVehicle } from '@/api/vehicles'
+import { getPorts } from '@/api/ports'
 
 const showModal = ref(false)
 const isEdit = ref(false)
 const searchCarName = ref('')
 
 const ports = ref([])
-
 const vehicles = ref([])
+
+const fetchPorts = async () => {
+  try {
+    const res = await getPorts()
+    ports.value = res.records || res || []
+  } catch { /* ignore */ }
+}
+
+const fetchData = async () => {
+  try {
+    const res = await getVehicles()
+    vehicles.value = res.records || res || []
+  } catch {
+    ElMessage.error('获取车辆列表失败')
+  }
+}
+
+onMounted(() => {
+  fetchPorts()
+  fetchData()
+})
 
 const getPortName = (portId) => {
   const port = ports.value.find(p => p.id === portId)
@@ -128,33 +150,24 @@ const openEditModal = (row) => {
   showModal.value = true
 }
 
-const handleSave = () => {
+const handleSave = async () => {
   if (!form.carName) {
     ElMessage.warning('请输入拖车编号')
     return
   }
-  if (isEdit.value) {
-    const idx = vehicles.value.findIndex(v => v.id === form.id)
-    if (idx !== -1) {
-      vehicles.value[idx] = {
-        ...vehicles.value[idx],
-        carName: form.carName,
-        portId: form.portId,
-        status: form.status
-      }
+  try {
+    if (isEdit.value) {
+      await updateVehicle({ id: form.id, carName: form.carName, portId: form.portId })
+      ElMessage.success('车辆信息已更新')
+    } else {
+      await addVehicle({ carName: form.carName, portId: form.portId })
+      ElMessage.success('车辆已创建')
     }
-    ElMessage.success('车辆信息已更新')
-  } else {
-    vehicles.value.push({
-      id: vehicles.value.length > 0 ? Math.max(...vehicles.value.map(v => v.id)) + 1 : 1,
-      carName: form.carName,
-      portId: form.portId,
-      status: form.status,
-      createTime: new Date().toISOString().replace('T', ' ').substring(0, 19)
-    })
-    ElMessage.success('车辆已创建')
+    showModal.value = false
+    fetchData()
+  } catch {
+    ElMessage.error('操作失败')
   }
-  showModal.value = false
 }
 
 const handleDelete = (row) => {
@@ -162,9 +175,14 @@ const handleDelete = (row) => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    vehicles.value = vehicles.value.filter(v => v.id !== row.id)
-    ElMessage.success('车辆已删除')
+  }).then(async () => {
+    try {
+      await deleteVehicle(row.id)
+      ElMessage.success('车辆已删除')
+      fetchData()
+    } catch {
+      ElMessage.error('删除失败')
+    }
   }).catch(() => {})
 }
 </script>

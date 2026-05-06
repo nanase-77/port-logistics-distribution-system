@@ -22,3 +22,34 @@ export const getUserInfo = () => {
     method: 'get'
   })
 }
+
+export const getUsers = (params) => {
+  return request({
+    url: '/user/select',
+    method: 'get',
+    params: { pageNum: 1, pageSize: 100, ...params }
+  })
+}
+
+export const addUser = (data) => {
+  return request({
+    url: '/user/add',
+    method: 'post',
+    data
+  })
+}
+
+export const updateUser = (data) => {
+  return request({
+    url: '/user/update',
+    method: 'put',
+    data
+  })
+}
+
+export const deleteUser = (id) => {
+  return request({
+    url: `/user/delete/${id}`,
+    method: 'delete'
+  })
+}

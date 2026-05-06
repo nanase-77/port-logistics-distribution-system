@@ -67,23 +67,53 @@
 </template>
 
 <script setup>
-import { ref, markRaw, computed } from 'vue'
+import { ref, markRaw, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Compass, ArrowRight, Ship, CircleCheck } from '@element-plus/icons-vue'
+import { getLogistics } from '@/api/logistics'
+import { getOrders } from '@/api/orders'
+import { getPorts } from '@/api/ports'
+import { getShips } from '@/api/ships'
+import { getVehicles } from '@/api/vehicles'
 
 const searchOrderId = ref('')
 const showDetailModal = ref(false)
 const selectedLogistics = ref(null)
 
 const orders = ref([])
-
 const ports = ref([])
-
 const ships = ref([])
-
 const vehicles = ref([])
-
 const logisticsList = ref([])
+
+const fetchOrders = async () => {
+  try { const res = await getOrders(); orders.value = res.records || res || [] } catch { /* ignore */ }
+}
+const fetchPorts = async () => {
+  try { const res = await getPorts(); ports.value = res.records || res || [] } catch { /* ignore */ }
+}
+const fetchShips = async () => {
+  try { const res = await getShips(); ships.value = res.records || res || [] } catch { /* ignore */ }
+}
+const fetchVehicles = async () => {
+  try { const res = await getVehicles(); vehicles.value = res.records || res || [] } catch { /* ignore */ }
+}
+const fetchData = async () => {
+  try {
+    const res = await getLogistics()
+    logisticsList.value = res.records || res || []
+  } catch {
+    ElMessage.error('获取物流列表失败')
+  }
+}
+
+onMounted(() => {
+  fetchOrders()
+  fetchPorts()
+  fetchShips()
+  fetchVehicles()
+  fetchData()
+})
 
 const logisticsDetails = {}
 

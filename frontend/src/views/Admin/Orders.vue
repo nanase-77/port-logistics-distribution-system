@@ -84,8 +84,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getOrders, addOrder, updateOrder, deleteOrder } from '@/api/orders'
+import { getUsers } from '@/api/user'
+import { getContainers } from '@/api/containers'
 
 const showModal = ref(false)
 const isEdit = ref(false)
@@ -93,10 +96,37 @@ const statusFilter = ref('')
 const searchOrderNumber = ref('')
 
 const users = ref([])
-
 const containers = ref([])
-
 const orders = ref([])
+
+const fetchUsers = async () => {
+  try {
+    const res = await getUsers()
+    users.value = res.records || res || []
+  } catch { /* ignore */ }
+}
+
+const fetchContainers = async () => {
+  try {
+    const res = await getContainers()
+    containers.value = res.records || res || []
+  } catch { /* ignore */ }
+}
+
+const fetchData = async () => {
+  try {
+    const res = await getOrders()
+    orders.value = res.records || res || []
+  } catch {
+    ElMessage.error('获取订单列表失败')
+  }
+}
+
+onMounted(() => {
+  fetchUsers()
+  fetchContainers()
+  fetchData()
+})
 
 const getUsername = (userId) => {
   const user = users.value.find(u => u.id === userId)
@@ -174,44 +204,44 @@ const openEditModal = (row) => {
   showModal.value = true
 }
 
-const handleSave = () => {
+const handleSave = async () => {
   if (!form.orderNumber) {
     ElMessage.warning('请输入订单号')
     return
   }
-  if (isEdit.value) {
-    const idx = orders.value.findIndex(o => o.id === form.id)
-    if (idx !== -1) {
-      orders.value[idx] = {
-        ...orders.value[idx],
-        userId: form.userId,
-        containerIds: form.containerIds,
-        status: form.status
-      }
+  try {
+    if (isEdit.value) {
+      await updateOrder({ id: form.id, orderNumber: form.orderNumber, userId: form.userId, containerIds: form.containerIds, status: form.status })
+      ElMessage.success('订单信息已更新')
+    } else {
+      await addOrder({ orderNumber: form.orderNumber, userId: form.userId, containerIds: form.containerIds, status: form.status })
+      ElMessage.success('订单已创建')
     }
-    ElMessage.success('订单信息已更新')
-  } else {
-    orders.value.push({
-      id: orders.value.length > 0 ? Math.max(...orders.value.map(o => o.id)) + 1 : 1,
-      orderNumber: form.orderNumber,
-      userId: form.userId,
-      containerIds: form.containerIds,
-      status: form.status,
-      createTime: new Date().toISOString().replace('T', ' ').substring(0, 19)
-    })
-    ElMessage.success('订单已创建')
+    showModal.value = false
+    fetchData()
+  } catch {
+    ElMessage.error('操作失败')
   }
-  showModal.value = false
 }
 
-const handleAudit = (row) => {
-  row.status = '进行中'
-  ElMessage.success(`订单 ${row.orderNumber} 已审核通过`)
+const handleAudit = async (row) => {
+  try {
+    await updateOrder({ id: row.id, status: '进行中' })
+    ElMessage.success(`订单 ${row.orderNumber} 已审核通过`)
+    fetchData()
+  } catch {
+    ElMessage.error('操作失败')
+  }
 }
 
-const handleComplete = (row) => {
-  row.status = '已完成'
-  ElMessage.success(`订单 ${row.orderNumber} 已标记完成`)
+const handleComplete = async (row) => {
+  try {
+    await updateOrder({ id: row.id, status: '已完成' })
+    ElMessage.success(`订单 ${row.orderNumber} 已标记完成`)
+    fetchData()
+  } catch {
+    ElMessage.error('操作失败')
+  }
 }
 
 const handleDelete = (row) => {
@@ -219,9 +249,14 @@ const handleDelete = (row) => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    orders.value = orders.value.filter(o => o.orderNumber !== row.orderNumber)
-    ElMessage.success('订单已删除')
+  }).then(async () => {
+    try {
+      await deleteOrder(row.id)
+      ElMessage.success('订单已删除')
+      fetchData()
+    } catch {
+      ElMessage.error('删除失败')
+    }
   }).catch(() => {})
 }
 </script>

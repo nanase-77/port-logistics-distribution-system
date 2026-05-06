@@ -1,32 +1,24 @@
 import request from '@/utils/request'
 
-// 船舶管理接口
 export const getShips = (params) => {
   return request({
-    url: '/ships',
+    url: '/ship/select',
     method: 'get',
-    params
-  })
-}
-
-export const getShipById = (id) => {
-  return request({
-    url: `/ships/${id}`,
-    method: 'get'
+    params: { pageNum: 1, pageSize: 100, ...params }
   })
 }
 
 export const addShip = (data) => {
   return request({
-    url: '/ships',
+    url: '/ship/add',
     method: 'post',
     data
   })
 }
 
-export const updateShip = (id, data) => {
+export const updateShip = (data) => {
   return request({
-    url: `/ships/${id}`,
+    url: '/ship/update',
     method: 'put',
     data
   })
@@ -34,7 +26,7 @@ export const updateShip = (id, data) => {
 
 export const deleteShip = (id) => {
   return request({
-    url: `/ships/${id}`,
+    url: `/ship/delete/${id}`,
     method: 'delete'
   })
 }

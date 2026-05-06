@@ -1,32 +1,24 @@
 import request from '@/utils/request'
 
-// 订单管理接口
 export const getOrders = (params) => {
   return request({
-    url: '/orders',
+    url: '/order/select',
     method: 'get',
-    params
-  })
-}
-
-export const getOrderById = (id) => {
-  return request({
-    url: `/orders/${id}`,
-    method: 'get'
+    params: { pageNum: 1, pageSize: 100, ...params }
   })
 }
 
 export const addOrder = (data) => {
   return request({
-    url: '/orders',
+    url: '/order/add',
     method: 'post',
     data
   })
 }
 
-export const updateOrder = (id, data) => {
+export const updateOrder = (data) => {
   return request({
-    url: `/orders/${id}`,
+    url: '/order/update',
     method: 'put',
     data
   })
@@ -34,7 +26,7 @@ export const updateOrder = (id, data) => {
 
 export const deleteOrder = (id) => {
   return request({
-    url: `/orders/${id}`,
+    url: `/order/delete/${id}`,
     method: 'delete'
   })
 }

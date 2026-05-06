@@ -9,23 +9,27 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+@Component
 public class LoginIntercepter implements HandlerInterceptor {
 
     @Autowired
     StringRedisTemplate stringRedisTemplate;
+
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        String token = request.getHeader("authorization");
-        if(StrUtil.isBlank(token)){
+        String authHeader = request.getHeader("authorization");
+        if (StrUtil.isBlank(authHeader)) {
             response.setStatus(401);
             return false;
         }
-        Map<Object,Object> entries = stringRedisTemplate.opsForHash().entries(RedisConstants.LOGIN_SESSION + token);
+        String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
+        Map<Object, Object> entries = stringRedisTemplate.opsForHash().entries(RedisConstants.LOGIN_SESSION + token);
 //        3.判断用户是否存在
         UserLoginDTO userLoginDTO = BeanUtil.fillBeanWithMap(entries,new UserLoginDTO(),false);
         if(userLoginDTO==null){

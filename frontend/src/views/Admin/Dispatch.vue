@@ -72,9 +72,10 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { CircleCheck } from '@element-plus/icons-vue'
+import { getOrders } from '@/api/orders'
 
 const dispatchForm = reactive({
   orderNumber: '',
@@ -82,6 +83,18 @@ const dispatchForm = reactive({
 })
 
 const pendingOrders = ref([])
+
+const fetchPendingOrders = async () => {
+  try {
+    const res = await getOrders()
+    const allOrders = res.records || res || []
+    pendingOrders.value = allOrders.filter(o => o.status === '待处理')
+  } catch { /* ignore */ }
+}
+
+onMounted(() => {
+  fetchPendingOrders()
+})
 const dispatchResults = ref([])
 const optimizationTips = ref([])
 const exceptionType = ref('equipment')

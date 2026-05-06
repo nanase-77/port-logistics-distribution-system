@@ -1,32 +1,24 @@
 import request from '@/utils/request'
 
-// 公司管理接口
 export const getCompanies = (params) => {
   return request({
-    url: '/companies',
+    url: '/company/select',
     method: 'get',
-    params
-  })
-}
-
-export const getCompanyById = (id) => {
-  return request({
-    url: `/companies/${id}`,
-    method: 'get'
+    params: { pageNum: 1, pageSize: 100, ...params }
   })
 }
 
 export const addCompany = (data) => {
   return request({
-    url: '/companies',
+    url: '/company/add',
     method: 'post',
     data
   })
 }
 
-export const updateCompany = (id, data) => {
+export const updateCompany = (data) => {
   return request({
-    url: `/companies/${id}`,
+    url: '/company/update',
     method: 'put',
     data
   })
@@ -34,7 +26,7 @@ export const updateCompany = (id, data) => {
 
 export const deleteCompany = (id) => {
   return request({
-    url: `/companies/${id}`,
+    url: `/company/delete/${id}`,
     method: 'delete'
   })
 }
