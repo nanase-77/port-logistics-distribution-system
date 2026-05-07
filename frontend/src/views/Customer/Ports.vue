@@ -32,12 +32,21 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { getPorts } from '@/api/ports'
 
 const searchPort = ref('')
 
 const ports = ref([])
+
+const fetchData = async () => {
+  try { const res = await getPorts(); ports.value = res.records || res || [] } catch { /* ignore */ }
+}
+
+onMounted(() => {
+  fetchData()
+})
 
 const filteredPorts = computed(() => {
   if (!searchPort.value) return ports.value

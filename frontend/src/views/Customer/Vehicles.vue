@@ -42,15 +42,28 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { getVehicles } from '@/api/vehicles'
+import { getPorts } from '@/api/ports'
 
 const statusFilter = ref('')
 const searchCarName = ref('')
 
 const ports = ref([])
-
 const vehicles = ref([])
+
+const fetchPorts = async () => {
+  try { const res = await getPorts(); ports.value = res.records || res || [] } catch { /* ignore */ }
+}
+const fetchData = async () => {
+  try { const res = await getVehicles(); vehicles.value = res.records || res || [] } catch { /* ignore */ }
+}
+
+onMounted(() => {
+  fetchPorts()
+  fetchData()
+})
 
 const getPortName = (portId) => {
   const port = ports.value.find(p => p.id === portId)

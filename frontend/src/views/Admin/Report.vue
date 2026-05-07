@@ -11,21 +11,21 @@
       <el-row :gutter="20">
         <el-col :span="8">
           <div class="stat-item">
-            <div class="stat-value">1,258</div>
-            <div class="stat-label">本月吞吐量(TEU)</div>
-          </div>
+          <div class="stat-value">{{ reportStats.throughput }}</div>
+          <div class="stat-label">本月吞吐量(TEU)</div>
+        </div>
         </el-col>
         <el-col :span="8">
           <div class="stat-item">
-            <div class="stat-value">78.5%</div>
-            <div class="stat-label">订单完成率</div>
-          </div>
+          <div class="stat-value">{{ reportStats.completionRate }}%</div>
+          <div class="stat-label">订单完成率</div>
+        </div>
         </el-col>
         <el-col :span="8">
           <div class="stat-item">
-            <div class="stat-value">92.3%</div>
-            <div class="stat-label">设备利用率</div>
-          </div>
+          <div class="stat-value">{{ reportStats.utilizationRate }}%</div>
+          <div class="stat-label">设备利用率</div>
+        </div>
         </el-col>
       </el-row>
 
@@ -50,13 +50,13 @@
             <div class="progress-section">
               <div class="progress-item">
                 <span class="progress-label">已完成</span>
-                <el-progress :percentage="78.5" color="#10b981" />
-                <span class="progress-value">785 单</span>
+                <el-progress :percentage="orderStats.completedRate" color="#10b981" />
+                <span class="progress-value">{{ orderStats.completedCount }} 单</span>
               </div>
               <div class="progress-item">
                 <span class="progress-label">进行中</span>
-                <el-progress :percentage="21.5" color="#3b82f6" />
-                <span class="progress-value">215 单</span>
+                <el-progress :percentage="orderStats.processingRate" color="#3b82f6" />
+                <span class="progress-value">{{ orderStats.processingCount }} 单</span>
               </div>
             </div>
           </el-card>
@@ -67,10 +67,51 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { getReportData, getMonthlyThroughput, getOrderStatistics } from '@/api/report'
 
 const monthlyData = ref([])
+
+const reportStats = reactive({
+  throughput: '0',
+  completionRate: '0',
+  utilizationRate: '0'
+})
+
+const orderStats = reactive({
+  completedRate: 0,
+  completedCount: 0,
+  processingRate: 0,
+  processingCount: 0
+})
+
+const fetchData = async () => {
+  try {
+    const [monthlyRes, reportRes, orderRes] = await Promise.all([
+      getMonthlyThroughput(),
+      getReportData(),
+      getOrderStatistics()
+    ])
+    
+    monthlyData.value = monthlyRes.records || monthlyRes || []
+    
+    const reportData = reportRes || {}
+    reportStats.throughput = reportData.throughput || '0'
+    reportStats.completionRate = reportData.completionRate || '0'
+    reportStats.utilizationRate = reportData.utilizationRate || '0'
+    
+    const orderData = orderRes || {}
+    orderStats.completedRate = orderData.completedRate || 0
+    orderStats.completedCount = orderData.completedCount || 0
+    orderStats.processingRate = orderData.processingRate || 0
+    orderStats.processingCount = orderData.processingCount || 0
+  } catch { /* ignore */ }
+}
+
+onMounted(() => {
+  fetchData()
+})
 
 const exportReport = () => {
   ElMessage.success('报表导出成功')

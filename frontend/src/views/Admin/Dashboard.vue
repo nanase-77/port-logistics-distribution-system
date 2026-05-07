@@ -7,7 +7,7 @@
             <el-icon size="30"><User /></el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value">156</div>
+            <div class="stat-value">{{ stats.users }}</div>
             <div class="stat-label">用户总数</div>
           </div>
         </el-card>
@@ -18,7 +18,7 @@
             <el-icon size="30"><Document /></el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value">328</div>
+            <div class="stat-value">{{ stats.orders }}</div>
             <div class="stat-label">订单总数</div>
           </div>
         </el-card>
@@ -29,7 +29,7 @@
             <el-icon size="30"><Location /></el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value">42</div>
+            <div class="stat-value">{{ stats.ports }}</div>
             <div class="stat-label">港口数量</div>
           </div>
         </el-card>
@@ -40,7 +40,7 @@
             <el-icon size="30"><Van /></el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value">86</div>
+            <div class="stat-value">{{ stats.ships }}</div>
             <div class="stat-label">船舶数量</div>
           </div>
         </el-card>
@@ -50,7 +50,38 @@
 </template>
 
 <script setup>
+import { ref, reactive, onMounted } from 'vue'
 import { User, Document, Location, Van } from '@element-plus/icons-vue'
+import { getUsers } from '@/api/user'
+import { getOrders } from '@/api/orders'
+import { getPorts } from '@/api/ports'
+import { getShips } from '@/api/ships'
+
+const stats = reactive({
+  users: 0,
+  orders: 0,
+  ports: 0,
+  ships: 0
+})
+
+const fetchStats = async () => {
+  try {
+    const [usersRes, ordersRes, portsRes, shipsRes] = await Promise.all([
+      getUsers(),
+      getOrders(),
+      getPorts(),
+      getShips()
+    ])
+    stats.users = (usersRes.records || usersRes || []).length || usersRes.total || 0
+    stats.orders = (ordersRes.records || ordersRes || []).length || ordersRes.total || 0
+    stats.ports = (portsRes.records || portsRes || []).length || portsRes.total || 0
+    stats.ships = (shipsRes.records || shipsRes || []).length || shipsRes.total || 0
+  } catch { /* ignore */ }
+}
+
+onMounted(() => {
+  fetchStats()
+})
 </script>
 
 <style scoped>

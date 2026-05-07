@@ -62,14 +62,28 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getPorts, addPort, updatePort, deletePort } from '@/api/ports'
 
 const showModal = ref(false)
 const isEdit = ref(false)
 const searchPortName = ref('')
 
 const ports = ref([])
+
+const fetchData = async () => {
+  try {
+    const res = await getPorts()
+    ports.value = res.records || res || []
+  } catch {
+    ElMessage.error('获取港口列表失败')
+  }
+}
+
+onMounted(() => {
+  fetchData()
+})
 
 const filteredPorts = computed(() => {
   if (!searchPortName.value) return ports.value
@@ -117,35 +131,24 @@ const openEditModal = (row) => {
   showModal.value = true
 }
 
-const handleSave = () => {
+const handleSave = async () => {
   if (!form.name || !form.country) {
     ElMessage.warning('请填写完整信息')
     return
   }
-  if (isEdit.value) {
-    const idx = ports.value.findIndex(p => p.id === form.id)
-    if (idx !== -1) {
-      ports.value[idx] = {
-        ...ports.value[idx],
-        name: form.name,
-        longitude: form.longitude,
-        latitude: form.latitude,
-        country: form.country
-      }
+  try {
+    if (isEdit.value) {
+      await updatePort({ id: form.id, portName: form.name, longitude: form.longitude, latitude: form.latitude })
+      ElMessage.success('港口信息已更新')
+    } else {
+      await addPort({ portName: form.name, longitude: form.longitude, latitude: form.latitude })
+      ElMessage.success('港口已创建')
     }
-    ElMessage.success('港口信息已更新')
-  } else {
-    ports.value.push({
-      id: ports.value.length > 0 ? Math.max(...ports.value.map(p => p.id)) + 1 : 1,
-      name: form.name,
-      longitude: form.longitude,
-      latitude: form.latitude,
-      country: form.country,
-      createTime: new Date().toISOString().replace('T', ' ').substring(0, 19)
-    })
-    ElMessage.success('港口已创建')
+    showModal.value = false
+    fetchData()
+  } catch {
+    ElMessage.error('操作失败')
   }
-  showModal.value = false
 }
 
 const handleDelete = (row) => {
@@ -153,9 +156,14 @@ const handleDelete = (row) => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    ports.value = ports.value.filter(p => p.id !== row.id)
-    ElMessage.success('港口已删除')
+  }).then(async () => {
+    try {
+      await deletePort(row.id)
+      ElMessage.success('港口已删除')
+      fetchData()
+    } catch {
+      ElMessage.error('删除失败')
+    }
   }).catch(() => {})
 }
 </script>

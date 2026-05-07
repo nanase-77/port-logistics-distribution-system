@@ -30,12 +30,21 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { getCompanies } from '@/api/companies'
 
 const searchCompany = ref('')
 
 const companies = ref([])
+
+const fetchData = async () => {
+  try { const res = await getCompanies(); companies.value = res.records || res || [] } catch { /* ignore */ }
+}
+
+onMounted(() => {
+  fetchData()
+})
 
 const filteredCompanies = computed(() => {
   if (!searchCompany.value) return companies.value

@@ -58,16 +58,38 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getShips, addShip, updateShip, deleteShip } from '@/api/ships'
+import { getCompanies } from '@/api/companies'
 
 const showModal = ref(false)
 const isEdit = ref(false)
 const searchShipName = ref('')
 
 const companies = ref([])
-
 const ships = ref([])
+
+const fetchCompanies = async () => {
+  try {
+    const res = await getCompanies()
+    companies.value = res.records || res || []
+  } catch { /* ignore */ }
+}
+
+const fetchData = async () => {
+  try {
+    const res = await getShips()
+    ships.value = res.records || res || []
+  } catch {
+    ElMessage.error('获取船舶列表失败')
+  }
+}
+
+onMounted(() => {
+  fetchCompanies()
+  fetchData()
+})
 
 const getCompanyName = (companyId) => {
   const company = companies.value.find(c => c.id === companyId)
@@ -114,31 +136,24 @@ const openEditModal = (row) => {
   showModal.value = true
 }
 
-const handleSave = () => {
+const handleSave = async () => {
   if (!form.name) {
     ElMessage.warning('请输入船舶名称')
     return
   }
-  if (isEdit.value) {
-    const idx = ships.value.findIndex(s => s.id === form.id)
-    if (idx !== -1) {
-      ships.value[idx] = {
-        ...ships.value[idx],
-        name: form.name,
-        companyId: form.companyId
-      }
+  try {
+    if (isEdit.value) {
+      await updateShip({ id: form.id, shipName: form.name, companyId: String(form.companyId) })
+      ElMessage.success('船舶信息已更新')
+    } else {
+      await addShip({ shipName: form.name, companyId: String(form.companyId) })
+      ElMessage.success('船舶已创建')
     }
-    ElMessage.success('船舶信息已更新')
-  } else {
-    ships.value.push({
-      id: ships.value.length > 0 ? Math.max(...ships.value.map(s => s.id)) + 1 : 1,
-      name: form.name,
-      companyId: form.companyId,
-      createTime: new Date().toISOString().replace('T', ' ').substring(0, 19)
-    })
-    ElMessage.success('船舶已创建')
+    showModal.value = false
+    fetchData()
+  } catch {
+    ElMessage.error('操作失败')
   }
-  showModal.value = false
 }
 
 const handleDelete = (row) => {
@@ -146,9 +161,14 @@ const handleDelete = (row) => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    ships.value = ships.value.filter(s => s.id !== row.id)
-    ElMessage.success('船舶已删除')
+  }).then(async () => {
+    try {
+      await deleteShip(row.id)
+      ElMessage.success('船舶已删除')
+      fetchData()
+    } catch {
+      ElMessage.error('删除失败')
+    }
   }).catch(() => {})
 }
 </script>

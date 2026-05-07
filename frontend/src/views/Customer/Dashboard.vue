@@ -56,10 +56,22 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Clock, Loading, SuccessFilled } from '@element-plus/icons-vue'
+import { getOrders } from '@/api/orders'
 
 const recentOrders = ref([])
+
+const fetchData = async () => {
+  try {
+    const res = await getOrders()
+    recentOrders.value = (res.records || res || []).slice(0, 5)
+  } catch { /* ignore */ }
+}
+
+onMounted(() => {
+  fetchData()
+})
 
 const getStatusType = (status) => {
   const statusMap = {

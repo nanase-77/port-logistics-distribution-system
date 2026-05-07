@@ -72,14 +72,28 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getUsers, addUser, updateUser, deleteUser } from '@/api/user'
 
 const showModal = ref(false)
 const isEdit = ref(false)
 const searchUsername = ref('')
 
 const users = ref([])
+
+const fetchData = async () => {
+  try {
+    const res = await getUsers()
+    users.value = res.records || res || []
+  } catch {
+    ElMessage.error('获取用户列表失败')
+  }
+}
+
+onMounted(() => {
+  fetchData()
+})
 
 const filteredUsers = computed(() => {
   if (!searchUsername.value) return users.value
@@ -130,7 +144,7 @@ const openEditModal = (row) => {
   showModal.value = true
 }
 
-const handleSave = () => {
+const handleSave = async () => {
   if (!form.username || !form.phone) {
     ElMessage.warning('请填写完整信息')
     return
@@ -139,31 +153,19 @@ const handleSave = () => {
     ElMessage.warning('请输入密码')
     return
   }
-  if (isEdit.value) {
-    const idx = users.value.findIndex(u => u.id === form.id)
-    if (idx !== -1) {
-      users.value[idx] = {
-        ...users.value[idx],
-        username: form.username,
-        phone: form.phone,
-        state: form.state,
-        country: form.country
-      }
+  try {
+    if (isEdit.value) {
+      await updateUser({ id: form.id, username: form.username, phone: form.phone, state: form.state, country: form.country })
+      ElMessage.success('用户信息已更新')
+    } else {
+      await addUser({ username: form.username, phone: form.phone, password: form.password, state: form.state, country: form.country })
+      ElMessage.success('用户已创建')
     }
-    ElMessage.success('用户信息已更新')
-  } else {
-    const newUser = {
-      id: users.value.length > 0 ? Math.max(...users.value.map(u => u.id)) + 1 : 1,
-      username: form.username,
-      phone: form.phone,
-      state: form.state,
-      country: form.country,
-      createTime: new Date().toISOString().replace('T', ' ').substring(0, 19)
-    }
-    users.value.push(newUser)
-    ElMessage.success('用户已创建')
+    showModal.value = false
+    fetchData()
+  } catch {
+    ElMessage.error('操作失败')
   }
-  showModal.value = false
 }
 
 const handleDelete = (row) => {
@@ -171,9 +173,14 @@ const handleDelete = (row) => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    users.value = users.value.filter(u => u.id !== row.id)
-    ElMessage.success('用户已删除')
+  }).then(async () => {
+    try {
+      await deleteUser(row.id)
+      ElMessage.success('用户已删除')
+      fetchData()
+    } catch {
+      ElMessage.error('删除失败')
+    }
   }).catch(() => {})
 }
 </script>

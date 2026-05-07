@@ -49,13 +49,27 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { getOrders, updateOrder } from '@/api/orders'
 
 const statusFilter = ref('')
 const searchOrderNumber = ref('')
 
 const orders = ref([])
+
+const fetchData = async () => {
+  try {
+    const res = await getOrders()
+    orders.value = res.records || res || []
+  } catch {
+    ElMessage.error('获取订单列表失败')
+  }
+}
+
+onMounted(() => {
+  fetchData()
+})
 
 const filteredOrders = computed(() => {
   let result = orders.value
@@ -90,9 +104,14 @@ const handleViewDetail = (row) => {
   ElMessage.info(`查看订单详情: ${row.orderNumber}`)
 }
 
-const handleConfirm = (row) => {
-  row.status = '进行中'
-  ElMessage.success('订单已确认')
+const handleConfirm = async (row) => {
+  try {
+    await updateOrder({ id: row.id, status: '进行中' })
+    ElMessage.success('订单已确认')
+    fetchData()
+  } catch {
+    ElMessage.error('操作失败')
+  }
 }
 </script>
 

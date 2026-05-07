@@ -1,32 +1,24 @@
 import request from '@/utils/request'
 
-// 物流跟踪接口
 export const getLogistics = (params) => {
   return request({
-    url: '/logistics',
+    url: '/logistic/select',
     method: 'get',
-    params
-  })
-}
-
-export const getLogisticsById = (id) => {
-  return request({
-    url: `/logistics/${id}`,
-    method: 'get'
+    params: { pageNum: 1, pageSize: 100, ...params }
   })
 }
 
 export const addLogistics = (data) => {
   return request({
-    url: '/logistics',
+    url: '/logistic/add',
     method: 'post',
     data
   })
 }
 
-export const updateLogistics = (id, data) => {
+export const updateLogistics = (data) => {
   return request({
-    url: `/logistics/${id}`,
+    url: '/logistic/update',
     method: 'put',
     data
   })
@@ -34,7 +26,7 @@ export const updateLogistics = (id, data) => {
 
 export const deleteLogistics = (id) => {
   return request({
-    url: `/logistics/${id}`,
+    url: `/logistic/delete/${id}`,
     method: 'delete'
   })
 }

@@ -83,13 +83,22 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { getContainers } from '@/api/containers'
 
 const statusFilter = ref('')
 const searchContainerNumber = ref('')
 
 const containers = ref([])
+
+const fetchData = async () => {
+  try { const res = await getContainers(); containers.value = res.records || res || [] } catch { /* ignore */ }
+}
+
+onMounted(() => {
+  fetchData()
+})
 
 const filteredContainers = computed(() => {
   let result = containers.value

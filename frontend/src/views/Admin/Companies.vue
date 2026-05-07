@@ -54,14 +54,32 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getCompanies, addCompany, updateCompany, deleteCompany } from '@/api/companies'
 
 const showModal = ref(false)
 const isEdit = ref(false)
 const searchCompanyName = ref('')
 
+const loading = ref(false)
 const companies = ref([])
+
+const fetchData = async () => {
+  loading.value = true
+  try {
+    const res = await getCompanies()
+    companies.value = res.records || res || []
+  } catch {
+    ElMessage.error('获取公司列表失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchData()
+})
 
 const filteredCompanies = computed(() => {
   if (!searchCompanyName.value) return companies.value
@@ -103,31 +121,24 @@ const openEditModal = (row) => {
   showModal.value = true
 }
 
-const handleSave = () => {
+const handleSave = async () => {
   if (!form.name || !form.country) {
     ElMessage.warning('请填写完整信息')
     return
   }
-  if (isEdit.value) {
-    const idx = companies.value.findIndex(c => c.id === form.id)
-    if (idx !== -1) {
-      companies.value[idx] = {
-        ...companies.value[idx],
-        name: form.name,
-        country: form.country
-      }
+  try {
+    if (isEdit.value) {
+      await updateCompany({ id: form.id, companyName: form.name, country: form.country })
+      ElMessage.success('公司信息已更新')
+    } else {
+      await addCompany({ companyName: form.name, country: form.country })
+      ElMessage.success('公司已创建')
     }
-    ElMessage.success('公司信息已更新')
-  } else {
-    companies.value.push({
-      id: companies.value.length > 0 ? Math.max(...companies.value.map(c => c.id)) + 1 : 1,
-      name: form.name,
-      country: form.country,
-      createTime: new Date().toISOString().replace('T', ' ').substring(0, 19)
-    })
-    ElMessage.success('公司已创建')
+    showModal.value = false
+    fetchData()
+  } catch {
+    ElMessage.error('操作失败')
   }
-  showModal.value = false
 }
 
 const handleDelete = (row) => {
@@ -135,9 +146,14 @@ const handleDelete = (row) => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    companies.value = companies.value.filter(c => c.id !== row.id)
-    ElMessage.success('公司已删除')
+  }).then(async () => {
+    try {
+      await deleteCompany(row.id)
+      ElMessage.success('公司已删除')
+      fetchData()
+    } catch {
+      ElMessage.error('删除失败')
+    }
   }).catch(() => {})
 }
 </script>

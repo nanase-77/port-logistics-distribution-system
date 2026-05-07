@@ -114,9 +114,14 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, markRaw } from 'vue'
+import { ref, reactive, computed, markRaw, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { CircleCheck, ArrowRight, Compass, Ship } from '@element-plus/icons-vue'
+import { getLogistics, addLogistics, updateLogistics, deleteLogistics } from '@/api/logistics'
+import { getOrders } from '@/api/orders'
+import { getPorts } from '@/api/ports'
+import { getShips } from '@/api/ships'
+import { getVehicles } from '@/api/vehicles'
 
 const showModal = ref(false)
 const isEdit = ref(false)
@@ -125,14 +130,55 @@ const showDetailModal = ref(false)
 const selectedLogistics = ref(null)
 
 const orders = ref([])
-
 const ports = ref([])
-
 const ships = ref([])
-
 const vehicles = ref([])
-
 const logisticsList = ref([])
+
+const fetchOrders = async () => {
+  try {
+    const res = await getOrders()
+    orders.value = res.records || res || []
+  } catch { /* ignore */ }
+}
+
+const fetchPorts = async () => {
+  try {
+    const res = await getPorts()
+    ports.value = res.records || res || []
+  } catch { /* ignore */ }
+}
+
+const fetchShips = async () => {
+  try {
+    const res = await getShips()
+    ships.value = res.records || res || []
+  } catch { /* ignore */ }
+}
+
+const fetchVehicles = async () => {
+  try {
+    const res = await getVehicles()
+    vehicles.value = res.records || res || []
+  } catch { /* ignore */ }
+}
+
+const fetchData = async () => {
+  try {
+    const res = await getLogistics()
+    logisticsList.value = res.records || res || []
+  } catch {
+    ElMessage.error('获取物流列表失败')
+  }
+}
+
+onMounted(() => {
+  fetchOrders()
+  fetchPorts()
+  fetchShips()
+  fetchVehicles()
+  fetchData()
+})
 
 const logisticsDetails = {}
 
@@ -231,39 +277,24 @@ const openEditModal = (row) => {
   showModal.value = true
 }
 
-const handleSave = () => {
+const handleSave = async () => {
   if (!form.orderId || !form.startPortId || !form.endPortId) {
     ElMessage.warning('请填写完整信息')
     return
   }
-  if (isEdit.value) {
-    const idx = logisticsList.value.findIndex(l => l.id === form.id)
-    if (idx !== -1) {
-      logisticsList.value[idx] = {
-        ...logisticsList.value[idx],
-        orderId: form.orderId,
-        startPortId: form.startPortId,
-        endPortId: form.endPortId,
-        currentPortId: form.currentPortId,
-        shipId: form.shipId,
-        carId: form.carId
-      }
+  try {
+    if (isEdit.value) {
+      await updateLogistics({ id: form.id, orderId: form.orderId, startPortId: form.startPortId, endPortId: form.endPortId, currentPortId: form.currentPortId, shipId: form.shipId, carId: form.carId })
+      ElMessage.success('物流记录已更新')
+    } else {
+      await addLogistics({ orderId: form.orderId, startPortId: form.startPortId, endPortId: form.endPortId, currentPortId: form.currentPortId, shipId: form.shipId, carId: form.carId })
+      ElMessage.success('物流记录已创建')
     }
-    ElMessage.success('物流记录已更新')
-  } else {
-    logisticsList.value.push({
-      id: logisticsList.value.length > 0 ? Math.max(...logisticsList.value.map(l => l.id)) + 1 : 1,
-      orderId: form.orderId,
-      startPortId: form.startPortId,
-      endPortId: form.endPortId,
-      currentPortId: form.currentPortId,
-      shipId: form.shipId,
-      carId: form.carId,
-      createTime: new Date().toISOString().replace('T', ' ').substring(0, 19)
-    })
-    ElMessage.success('物流记录已创建')
+    showModal.value = false
+    fetchData()
+  } catch {
+    ElMessage.error('操作失败')
   }
-  showModal.value = false
 }
 
 const handleDelete = (row) => {
@@ -271,9 +302,14 @@ const handleDelete = (row) => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    logisticsList.value = logisticsList.value.filter(l => l.id !== row.id)
-    ElMessage.success('物流记录已删除')
+  }).then(async () => {
+    try {
+      await deleteLogistics(row.id)
+      ElMessage.success('物流记录已删除')
+      fetchData()
+    } catch {
+      ElMessage.error('删除失败')
+    }
   }).catch(() => {})
 }
 </script>

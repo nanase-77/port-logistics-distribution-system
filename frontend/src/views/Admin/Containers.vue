@@ -65,16 +65,38 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getContainers, addContainer, updateContainer, deleteContainer } from '@/api/containers'
+import { getCompanies } from '@/api/companies'
 
 const showModal = ref(false)
 const isEdit = ref(false)
 const searchContent = ref('')
 
 const companies = ref([])
-
 const containers = ref([])
+
+const fetchCompanies = async () => {
+  try {
+    const res = await getCompanies()
+    companies.value = res.records || res || []
+  } catch { /* ignore */ }
+}
+
+const fetchData = async () => {
+  try {
+    const res = await getContainers()
+    containers.value = res.records || res || []
+  } catch {
+    ElMessage.error('获取集装箱列表失败')
+  }
+}
+
+onMounted(() => {
+  fetchCompanies()
+  fetchData()
+})
 
 const getCompanyName = (companyId) => {
   const company = companies.value.find(c => c.id === companyId)
@@ -124,33 +146,24 @@ const openEditModal = (row) => {
   showModal.value = true
 }
 
-const handleSave = () => {
+const handleSave = async () => {
   if (!form.content) {
     ElMessage.warning('请输入货物描述')
     return
   }
-  if (isEdit.value) {
-    const idx = containers.value.findIndex(c => c.id === form.id)
-    if (idx !== -1) {
-      containers.value[idx] = {
-        ...containers.value[idx],
-        content: form.content,
-        size: form.size,
-        companyId: form.companyId
-      }
+  try {
+    if (isEdit.value) {
+      await updateContainer({ id: form.id, content: form.content, companyId: form.companyId })
+      ElMessage.success('集装箱信息已更新')
+    } else {
+      await addContainer({ content: form.content, companyId: form.companyId })
+      ElMessage.success('集装箱已创建')
     }
-    ElMessage.success('集装箱信息已更新')
-  } else {
-    containers.value.push({
-      id: containers.value.length > 0 ? Math.max(...containers.value.map(c => c.id)) + 1 : 1,
-      content: form.content,
-      size: form.size,
-      companyId: form.companyId,
-      createTime: new Date().toISOString().replace('T', ' ').substring(0, 19)
-    })
-    ElMessage.success('集装箱已创建')
+    showModal.value = false
+    fetchData()
+  } catch {
+    ElMessage.error('操作失败')
   }
-  showModal.value = false
 }
 
 const handleDelete = (row) => {
@@ -158,9 +171,14 @@ const handleDelete = (row) => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    containers.value = containers.value.filter(c => c.id !== row.id)
-    ElMessage.success('集装箱已删除')
+  }).then(async () => {
+    try {
+      await deleteContainer(row.id)
+      ElMessage.success('集装箱已删除')
+      fetchData()
+    } catch {
+      ElMessage.error('删除失败')
+    }
   }).catch(() => {})
 }
 </script>
