@@ -1,9 +1,9 @@
 <template>
   <div>
     <el-card class="search-card">
-      <el-input 
-        v-model="searchContainerNumber" 
-        placeholder="输入集装箱编号查询" 
+      <el-input
+        v-model="searchContainerNumber"
+        placeholder="输入集装箱编号查询"
         style="width: 300px;"
         @keyup.enter="handleSearch"
       >
@@ -52,12 +52,6 @@
       <template #header>
         <div class="card-header">
           <span>集装箱列表</span>
-          <el-select v-model="statusFilter" placeholder="筛选状态" style="width: 150px;">
-            <el-option label="全部" value="" />
-            <el-option label="空闲" value="空闲" />
-            <el-option label="使用中" value="使用中" />
-            <el-option label="运输中" value="运输中" />
-          </el-select>
         </div>
       </template>
       <el-table :data="filteredContainers" stripe>
@@ -71,12 +65,6 @@
             <el-tag :type="getStatusType(row.status)">{{ row.status }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="orderNumber" label="关联订单" />
-        <el-table-column label="操作">
-          <template #default="{ row }">
-            <el-button type="primary" size="small" @click="handleViewDetail(row)">详情</el-button>
-          </template>
-        </el-table-column>
       </el-table>
     </el-card>
   </div>
@@ -85,7 +73,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getContainers } from '@/api/containers'
+import { getContainers } from '@/api/customerContainer'
 
 const statusFilter = ref('')
 const searchContainerNumber = ref('')
@@ -93,7 +81,12 @@ const searchContainerNumber = ref('')
 const containers = ref([])
 
 const fetchData = async () => {
-  try { const res = await getContainers(); containers.value = res.records || res || [] } catch { /* ignore */ }
+  try {
+    const res = await getContainers()
+    containers.value = res.records || res || []
+  } catch {
+    ElMessage.error('获取集装箱列表失败')
+  }
 }
 
 onMounted(() => {
@@ -131,10 +124,6 @@ const handleSearch = () => {
       ElMessage.warning('未找到该集装箱')
     }
   }
-}
-
-const handleViewDetail = (row) => {
-  ElMessage.info(`查看集装箱详情: ${row.containerNumber}`)
 }
 </script>
 

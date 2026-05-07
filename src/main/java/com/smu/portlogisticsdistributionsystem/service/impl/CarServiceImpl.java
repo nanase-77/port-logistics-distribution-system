@@ -8,6 +8,7 @@ import com.smu.portlogisticsdistributionsystem.dto.CarQueryDTO;
 import com.smu.portlogisticsdistributionsystem.entity.Car;
 import com.smu.portlogisticsdistributionsystem.mapper.CarMapper;
 import com.smu.portlogisticsdistributionsystem.service.CarService;
+import com.smu.portlogisticsdistributionsystem.vo.CarVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -19,19 +20,9 @@ import java.util.List;
 @Service
 public class CarServiceImpl extends ServiceImpl<CarMapper, Car> implements CarService {
     @Override
-    public Page<Car> select(int pageNum, int pageSize, CarQueryDTO carQueryDTO) {
-        Page<Car> p = new Page<>(pageNum, pageSize);
-        QueryWrapper<Car> q = new QueryWrapper<>();
-        if (StringUtils.hasText(carQueryDTO.getCarName())) {
-            q.like("car_name", carQueryDTO.getCarName());
-        }
-        if (carQueryDTO.getPortId() != null) {
-            q.eq("port_id", carQueryDTO.getPortId());
-        }
-        if (StringUtils.hasText(carQueryDTO.getStatus())) {
-            q.eq("status", carQueryDTO.getStatus());
-        }
-        return baseMapper.selectPage(p, q);
+    public Page<CarVO> select(int pageNum, int pageSize) {
+        Page<CarVO> p = new Page<>(pageNum, pageSize);
+        return baseMapper.selectPageWithPort(p);
     }
 
     @Override

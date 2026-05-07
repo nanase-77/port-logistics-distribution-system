@@ -1,9 +1,9 @@
 <template>
   <div>
     <el-card class="search-card">
-      <el-input 
-        v-model="searchOrderId" 
-        placeholder="输入订单ID查询" 
+      <el-input
+        v-model="searchOrderId"
+        placeholder="输入订单ID查询"
         style="width: 300px;"
         @keyup.enter="handleSearch"
       >
@@ -33,12 +33,6 @@
         <el-table-column label="当前位置" width="140">
           <template #default="{ row }">{{ getPortName(row.currentPortId) }}</template>
         </el-table-column>
-        <el-table-column label="运输船舶" width="120">
-          <template #default="{ row }">{{ getShipName(row.shipId) }}</template>
-        </el-table-column>
-        <el-table-column label="运输车辆" width="120">
-          <template #default="{ row }">{{ getCarName(row.carId) }}</template>
-        </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" width="120">
           <template #default="{ row }">
@@ -47,34 +41,15 @@
         </el-table-column>
       </el-table>
     </el-card>
-
-    <el-dialog v-model="showDetailModal" :title="'物流详情 - ' + selectedLogistics?.orderNumber" width="500px">
-      <el-timeline>
-        <el-timeline-item 
-          v-for="(event, index) in selectedLogistics?.tracking" 
-          :key="index"
-          :timestamp="event.time"
-          :type="event.type"
-        >
-          <template #icon>
-            <component :is="getIcon(event.type)" />
-          </template>
-          {{ event.description }}
-        </el-timeline-item>
-      </el-timeline>
-    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, markRaw, computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Compass, ArrowRight, Ship, CircleCheck } from '@element-plus/icons-vue'
-import { getLogistics } from '@/api/logistics'
-import { getOrders } from '@/api/orders'
-import { getPorts } from '@/api/ports'
-import { getShips } from '@/api/ships'
-import { getVehicles } from '@/api/vehicles'
+import { getMyLogistics } from '@/api/customerLogistic'
+import { getMyOrders } from '@/api/customerOrder'
+import { getPorts } from '@/api/customerPort'
 
 const searchOrderId = ref('')
 const showDetailModal = ref(false)
@@ -82,25 +57,25 @@ const selectedLogistics = ref(null)
 
 const orders = ref([])
 const ports = ref([])
-const ships = ref([])
-const vehicles = ref([])
 const logisticsList = ref([])
 
 const fetchOrders = async () => {
-  try { const res = await getOrders(); orders.value = res.records || res || [] } catch { /* ignore */ }
+  try {
+    const res = await getMyOrders()
+    orders.value = res.records || res || []
+  } catch { /* ignore */ }
 }
+
 const fetchPorts = async () => {
-  try { const res = await getPorts(); ports.value = res.records || res || [] } catch { /* ignore */ }
+  try {
+    const res = await getPorts()
+    ports.value = res.records || res || []
+  } catch { /* ignore */ }
 }
-const fetchShips = async () => {
-  try { const res = await getShips(); ships.value = res.records || res || [] } catch { /* ignore */ }
-}
-const fetchVehicles = async () => {
-  try { const res = await getVehicles(); vehicles.value = res.records || res || [] } catch { /* ignore */ }
-}
+
 const fetchData = async () => {
   try {
-    const res = await getLogistics()
+    const res = await getMyLogistics()
     logisticsList.value = res.records || res || []
   } catch {
     ElMessage.error('获取物流列表失败')
@@ -110,12 +85,8 @@ const fetchData = async () => {
 onMounted(() => {
   fetchOrders()
   fetchPorts()
-  fetchShips()
-  fetchVehicles()
   fetchData()
 })
-
-const logisticsDetails = {}
 
 const getOrderNumber = (orderId) => {
   const order = orders.value.find(o => o.id === orderId)
@@ -126,18 +97,6 @@ const getPortName = (portId) => {
   if (!portId) return '-'
   const port = ports.value.find(p => p.id === portId)
   return port ? port.name : `港口${portId}`
-}
-
-const getShipName = (shipId) => {
-  if (!shipId) return '-'
-  const ship = ships.value.find(s => s.id === shipId)
-  return ship ? ship.name : `船舶${shipId}`
-}
-
-const getCarName = (carId) => {
-  if (!carId) return '-'
-  const car = vehicles.value.find(v => v.id === carId)
-  return car ? car.carName : `车辆${carId}`
 }
 
 const filteredLogistics = computed(() => {
@@ -154,24 +113,8 @@ const handleSearch = () => {
   }
 }
 
-const getIcon = (type) => {
-  const iconMap = {
-    'success': markRaw(CircleCheck),
-    'primary': markRaw(ArrowRight),
-    'warning': markRaw(Compass),
-    'info': markRaw(Ship)
-  }
-  return iconMap[type] || markRaw(Compass)
-}
-
 const handleViewDetail = (row) => {
-  selectedLogistics.value = logisticsDetails[row.id] || {
-    orderNumber: getOrderNumber(row.orderId),
-    tracking: [
-      { time: '暂无详细跟踪信息', type: 'info', description: '正在获取物流信息...' }
-    ]
-  }
-  showDetailModal.value = true
+  ElMessage.info(`查看物流详情: 订单${row.orderId}`)
 }
 </script>
 

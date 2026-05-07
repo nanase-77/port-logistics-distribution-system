@@ -7,7 +7,7 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 @Data
-@TableName("port")
+@TableName("ports")
 public class Port {
     @TableId(type= IdType.AUTO)
     private Integer id;

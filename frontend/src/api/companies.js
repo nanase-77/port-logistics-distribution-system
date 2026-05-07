@@ -2,7 +2,7 @@ import request from '@/utils/request'
 
 export const getCompanies = (params) => {
   return request({
-    url: '/company/select',
+    url: '/admin/company/select',
     method: 'get',
     params: { pageNum: 1, pageSize: 100, ...params }
   })
@@ -10,7 +10,7 @@ export const getCompanies = (params) => {
 
 export const addCompany = (data) => {
   return request({
-    url: '/company/add',
+    url: '/admin/company/add',
     method: 'post',
     data
   })
@@ -18,7 +18,7 @@ export const addCompany = (data) => {
 
 export const updateCompany = (data) => {
   return request({
-    url: '/company/update',
+    url: '/admin/company/update',
     method: 'put',
     data
   })
@@ -26,7 +26,7 @@ export const updateCompany = (data) => {
 
 export const deleteCompany = (id) => {
   return request({
-    url: `/company/delete/${id}`,
+    url: `/admin/company/delete/${id}`,
     method: 'delete'
   })
 }

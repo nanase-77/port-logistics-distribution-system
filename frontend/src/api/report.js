@@ -1,9 +1,8 @@
 import request from '@/utils/request'
 
-// 报表统计接口
 export const getReportData = (params) => {
   return request({
-    url: '/reports',
+    url: '/api/admin/report/select',
     method: 'get',
     params
   })
@@ -11,7 +10,7 @@ export const getReportData = (params) => {
 
 export const getMonthlyThroughput = (params) => {
   return request({
-    url: '/reports/monthly-throughput',
+    url: '/api/admin/report/monthly-throughput',
     method: 'get',
     params
   })
@@ -19,7 +18,7 @@ export const getMonthlyThroughput = (params) => {
 
 export const getOrderStatistics = (params) => {
   return request({
-    url: '/reports/order-statistics',
+    url: '/api/admin/report/order-statistics',
     method: 'get',
     params
   })
@@ -27,7 +26,7 @@ export const getOrderStatistics = (params) => {
 
 export const getPortTurnover = (params) => {
   return request({
-    url: '/reports/port-turnover',
+    url: '/api/admin/report/port-turnover',
     method: 'get',
     params
   })
@@ -35,7 +34,7 @@ export const getPortTurnover = (params) => {
 
 export const getEquipmentUsage = (params) => {
   return request({
-    url: '/reports/equipment-usage',
+    url: '/api/admin/report/equipment-usage',
     method: 'get',
     params
   })

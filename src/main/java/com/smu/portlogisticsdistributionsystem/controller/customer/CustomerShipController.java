@@ -2,8 +2,8 @@ package com.smu.portlogisticsdistributionsystem.controller.customer;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.smu.portlogisticsdistributionsystem.common.Result;
-import com.smu.portlogisticsdistributionsystem.entity.Ship;
 import com.smu.portlogisticsdistributionsystem.service.ShipService;
+import com.smu.portlogisticsdistributionsystem.vo.ShipVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,9 +19,9 @@ public class CustomerShipController {
 
     @GetMapping("/select")
     @ApiOperation("查询船舶")
-    public Result<Page<Ship>> select(@RequestParam(defaultValue = "1") int pageNum,
+    public Result<Page<ShipVO>> select(@RequestParam(defaultValue = "1") int pageNum,
                                       @RequestParam(defaultValue = "10") int pageSize) {
-        Page<Ship> page = shipService.select(pageNum, pageSize);
+        Page<ShipVO> page = shipService.select(pageNum, pageSize);
         return Result.success(page);
     }
 }

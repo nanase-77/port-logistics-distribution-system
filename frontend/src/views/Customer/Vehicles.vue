@@ -1,9 +1,9 @@
 <template>
   <div>
     <el-card class="search-card">
-      <el-input 
-        v-model="searchCarName" 
-        placeholder="输入拖车编号查询" 
+      <el-input
+        v-model="searchCarName"
+        placeholder="输入拖车编号查询"
         style="width: 300px;"
         @keyup.enter="handleSearch"
       >
@@ -44,8 +44,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getVehicles } from '@/api/vehicles'
-import { getPorts } from '@/api/ports'
+import { getVehicles } from '@/api/customerCar'
+import { getPorts } from '@/api/customerPort'
 
 const statusFilter = ref('')
 const searchCarName = ref('')
@@ -54,10 +54,19 @@ const ports = ref([])
 const vehicles = ref([])
 
 const fetchPorts = async () => {
-  try { const res = await getPorts(); ports.value = res.records || res || [] } catch { /* ignore */ }
+  try {
+    const res = await getPorts()
+    ports.value = res.records || res || []
+  } catch { /* ignore */ }
 }
+
 const fetchData = async () => {
-  try { const res = await getVehicles(); vehicles.value = res.records || res || [] } catch { /* ignore */ }
+  try {
+    const res = await getVehicles()
+    vehicles.value = res.records || res || []
+  } catch {
+    ElMessage.error('获取车辆列表失败')
+  }
 }
 
 onMounted(() => {

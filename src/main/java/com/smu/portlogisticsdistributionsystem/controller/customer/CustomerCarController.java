@@ -2,9 +2,8 @@ package com.smu.portlogisticsdistributionsystem.controller.customer;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.smu.portlogisticsdistributionsystem.common.Result;
-import com.smu.portlogisticsdistributionsystem.dto.CarQueryDTO;
-import com.smu.portlogisticsdistributionsystem.entity.Car;
 import com.smu.portlogisticsdistributionsystem.service.CarService;
+import com.smu.portlogisticsdistributionsystem.vo.CarVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,10 +19,9 @@ public class CustomerCarController {
 
     @GetMapping("/select")
     @ApiOperation("查询车辆")
-    public Result<Page<Car>> select(@RequestParam(defaultValue = "1") int pageNum,
-                                     @RequestParam(defaultValue = "10") int pageSize,
-                                     CarQueryDTO carQueryDTO) {
-        Page<Car> page = carService.select(pageNum, pageSize, carQueryDTO);
+    public Result<Page<CarVO>> select(@RequestParam(defaultValue = "1") int pageNum,
+                                     @RequestParam(defaultValue = "10") int pageSize) {
+        Page<CarVO> page = carService.select(pageNum, pageSize);
         return Result.success(page);
     }
 }

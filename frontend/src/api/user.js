@@ -25,7 +25,7 @@ export const getUserInfo = () => {
 
 export const getUsers = (params) => {
   return request({
-    url: '/user/select',
+    url: '/admin/user/select',
     method: 'get',
     params: { pageNum: 1, pageSize: 100, ...params }
   })
@@ -33,7 +33,7 @@ export const getUsers = (params) => {
 
 export const addUser = (data) => {
   return request({
-    url: '/user/add',
+    url: '/admin/user/add',
     method: 'post',
     data
   })
@@ -41,7 +41,7 @@ export const addUser = (data) => {
 
 export const updateUser = (data) => {
   return request({
-    url: '/user/update',
+    url: '/admin/user/update',
     method: 'put',
     data
   })
@@ -49,7 +49,7 @@ export const updateUser = (data) => {
 
 export const deleteUser = (id) => {
   return request({
-    url: `/user/delete/${id}`,
+    url: `/admin/user/delete/${id}`,
     method: 'delete'
   })
 }

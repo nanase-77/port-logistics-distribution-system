@@ -1,9 +1,9 @@
 <template>
   <div>
     <el-card class="search-card">
-      <el-input 
-        v-model="searchPort" 
-        placeholder="输入港口名称查询" 
+      <el-input
+        v-model="searchPort"
+        placeholder="输入港口名称查询"
         style="width: 300px;"
         @keyup.enter="handleSearch"
       >
@@ -34,14 +34,19 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getPorts } from '@/api/ports'
+import { getPorts } from '@/api/customerPort'
 
 const searchPort = ref('')
 
 const ports = ref([])
 
 const fetchData = async () => {
-  try { const res = await getPorts(); ports.value = res.records || res || [] } catch { /* ignore */ }
+  try {
+    const res = await getPorts()
+    ports.value = res.records || res || []
+  } catch {
+    ElMessage.error('获取港口列表失败')
+  }
 }
 
 onMounted(() => {

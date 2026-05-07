@@ -1,9 +1,9 @@
 <template>
   <div>
     <el-card class="search-card">
-      <el-input 
-        v-model="searchOrderNumber" 
-        placeholder="输入订单号查询" 
+      <el-input
+        v-model="searchOrderNumber"
+        placeholder="输入订单号查询"
         style="width: 300px;"
         @keyup.enter="handleSearch"
       >
@@ -17,12 +17,7 @@
       <template #header>
         <div class="card-header">
           <span>我的订单</span>
-          <el-select v-model="statusFilter" placeholder="筛选状态" style="width: 140px;">
-            <el-option label="全部" value="" />
-            <el-option label="待处理" value="待处理" />
-            <el-option label="进行中" value="进行中" />
-            <el-option label="已完成" value="已完成" />
-          </el-select>
+          <el-button type="primary" @click="openAddModal">新增订单</el-button>
         </div>
       </template>
       <el-table :data="filteredOrders" stripe>
@@ -37,22 +32,41 @@
         <el-table-column prop="endPort" label="目的港口" />
         <el-table-column prop="cargoType" label="货物类型" />
         <el-table-column prop="weight" label="重量(吨)" />
-        <el-table-column label="操作" width="180">
-          <template #default="{ row }">
-            <el-button type="primary" size="small" @click="handleViewDetail(row)">查看详情</el-button>
-            <el-button type="success" size="small" v-if="row.status === '待处理'" @click="handleConfirm(row)">确认订单</el-button>
-          </template>
-        </el-table-column>
       </el-table>
     </el-card>
+
+    <el-dialog v-model="showModal" title="新增订单" width="500px">
+      <el-form :model="form" label-width="100px">
+        <el-form-item label="订单号">
+          <el-input v-model="form.orderNumber" placeholder="请输入订单号" />
+        </el-form-item>
+        <el-form-item label="起始港口">
+          <el-input v-model="form.startPort" placeholder="请输入起始港口" />
+        </el-form-item>
+        <el-form-item label="目的港口">
+          <el-input v-model="form.endPort" placeholder="请输入目的港口" />
+        </el-form-item>
+        <el-form-item label="货物类型">
+          <el-input v-model="form.cargoType" placeholder="请输入货物类型" />
+        </el-form-item>
+        <el-form-item label="重量(吨)">
+          <el-input v-model="form.weight" placeholder="请输入重量" type="number" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showModal = false">取消</el-button>
+        <el-button type="primary" @click="handleSave">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getOrders, updateOrder } from '@/api/orders'
+import { getMyOrders, addOrder } from '@/api/customerOrder'
 
+const showModal = ref(false)
 const statusFilter = ref('')
 const searchOrderNumber = ref('')
 
@@ -60,7 +74,7 @@ const orders = ref([])
 
 const fetchData = async () => {
   try {
-    const res = await getOrders()
+    const res = await getMyOrders()
     orders.value = res.records || res || []
   } catch {
     ElMessage.error('获取订单列表失败')
@@ -100,14 +114,36 @@ const handleSearch = () => {
   }
 }
 
-const handleViewDetail = (row) => {
-  ElMessage.info(`查看订单详情: ${row.orderNumber}`)
+const form = ref({
+  orderNumber: '',
+  startPort: '',
+  endPort: '',
+  cargoType: '',
+  weight: null
+})
+
+const resetForm = () => {
+  form.value.orderNumber = ''
+  form.value.startPort = ''
+  form.value.endPort = ''
+  form.value.cargoType = ''
+  form.value.weight = null
 }
 
-const handleConfirm = async (row) => {
+const openAddModal = () => {
+  resetForm()
+  showModal.value = true
+}
+
+const handleSave = async () => {
+  if (!form.value.orderNumber) {
+    ElMessage.warning('请输入订单号')
+    return
+  }
   try {
-    await updateOrder({ id: row.id, status: '进行中' })
-    ElMessage.success('订单已确认')
+    await addOrder(form.value)
+    ElMessage.success('订单已创建')
+    showModal.value = false
     fetchData()
   } catch {
     ElMessage.error('操作失败')

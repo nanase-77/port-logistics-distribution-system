@@ -7,7 +7,7 @@
             <el-icon size="30"><Clock /></el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value">5</div>
+            <div class="stat-value">{{ pendingCount }}</div>
             <div class="stat-label">待处理订单</div>
           </div>
         </el-card>
@@ -18,7 +18,7 @@
             <el-icon size="30"><Loading /></el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value">8</div>
+            <div class="stat-value">{{ progressCount }}</div>
             <div class="stat-label">进行中订单</div>
           </div>
         </el-card>
@@ -29,7 +29,7 @@
             <el-icon size="30"><SuccessFilled /></el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value">23</div>
+            <div class="stat-value">{{ completedCount }}</div>
             <div class="stat-label">已完成订单</div>
           </div>
         </el-card>
@@ -56,15 +56,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Clock, Loading, SuccessFilled } from '@element-plus/icons-vue'
-import { getOrders } from '@/api/orders'
+import { getMyOrders } from '@/api/customerOrder'
 
 const recentOrders = ref([])
 
 const fetchData = async () => {
   try {
-    const res = await getOrders()
+    const res = await getMyOrders()
     recentOrders.value = (res.records || res || []).slice(0, 5)
   } catch { /* ignore */ }
 }
@@ -72,6 +72,10 @@ const fetchData = async () => {
 onMounted(() => {
   fetchData()
 })
+
+const pendingCount = computed(() => recentOrders.value.filter(o => o.status === '待处理').length)
+const progressCount = computed(() => recentOrders.value.filter(o => o.status === '进行中').length)
+const completedCount = computed(() => recentOrders.value.filter(o => o.status === '已完成').length)
 
 const getStatusType = (status) => {
   const statusMap = {

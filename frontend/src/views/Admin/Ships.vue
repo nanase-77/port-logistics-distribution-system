@@ -24,10 +24,8 @@
       </template>
       <el-table :data="filteredShips" stripe>
         <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column prop="name" label="船舶名称" width="160" />
-        <el-table-column label="所属公司" width="160">
-          <template #default="{ row }">{{ getCompanyName(row.companyId) }}</template>
-        </el-table-column>
+        <el-table-column prop="shipName" label="船舶名称" width="160" />
+        <el-table-column prop="companyName" label="所属公司" width="160" />
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" width="200">
           <template #default="{ row }">
@@ -41,11 +39,11 @@
     <el-dialog v-model="showModal" :title="isEdit ? '编辑船舶' : '新增船舶'" width="500px">
       <el-form :model="form" label-width="100px">
         <el-form-item label="船舶名称">
-          <el-input v-model="form.name" placeholder="请输入船舶名称" />
+          <el-input v-model="form.shipName" placeholder="请输入船舶名称" />
         </el-form-item>
         <el-form-item label="所属公司">
           <el-select v-model="form.companyId" style="width: 100%;">
-            <el-option v-for="company in companies" :key="company.id" :label="company.name" :value="company.id" />
+            <el-option v-for="company in companies" :key="company.id" :label="company.companyName" :value="company.id" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -91,19 +89,14 @@ onMounted(() => {
   fetchData()
 })
 
-const getCompanyName = (companyId) => {
-  const company = companies.value.find(c => c.id === companyId)
-  return company ? company.name : `公司${companyId}`
-}
-
 const filteredShips = computed(() => {
   if (!searchShipName.value) return ships.value
-  return ships.value.filter(item => item.name.includes(searchShipName.value))
+  return ships.value.filter(item => item.shipName.includes(searchShipName.value))
 })
 
 const handleSearch = () => {
   if (searchShipName.value) {
-    const found = ships.value.find(item => item.name.includes(searchShipName.value))
+    const found = ships.value.find(item => item.shipName.includes(searchShipName.value))
     if (!found) {
       ElMessage.warning('未找到该船舶')
     }
@@ -112,13 +105,13 @@ const handleSearch = () => {
 
 const form = reactive({
   id: null,
-  name: '',
+  shipName: '',
   companyId: 1
 })
 
 const resetForm = () => {
   form.id = null
-  form.name = ''
+  form.shipName = ''
   form.companyId = 1
 }
 
@@ -131,22 +124,22 @@ const openAddModal = () => {
 const openEditModal = (row) => {
   isEdit.value = true
   form.id = row.id
-  form.name = row.name
+  form.shipName = row.shipName
   form.companyId = row.companyId
   showModal.value = true
 }
 
 const handleSave = async () => {
-  if (!form.name) {
+  if (!form.shipName) {
     ElMessage.warning('请输入船舶名称')
     return
   }
   try {
     if (isEdit.value) {
-      await updateShip({ id: form.id, shipName: form.name, companyId: String(form.companyId) })
+      await updateShip({ id: form.id, shipName: form.shipName, companyId: String(form.companyId) })
       ElMessage.success('船舶信息已更新')
     } else {
-      await addShip({ shipName: form.name, companyId: String(form.companyId) })
+      await addShip({ shipName: form.shipName, companyId: String(form.companyId) })
       ElMessage.success('船舶已创建')
     }
     showModal.value = false
@@ -157,7 +150,7 @@ const handleSave = async () => {
 }
 
 const handleDelete = (row) => {
-  ElMessageBox.confirm(`确定要删除船舶 "${row.name}" 吗？`, '确认删除', {
+  ElMessageBox.confirm(`确定要删除船舶 "${row.shipName}" 吗？`, '确认删除', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'

@@ -1,13 +1,13 @@
 package com.smu.portlogisticsdistributionsystem.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.smu.portlogisticsdistributionsystem.dto.ShipDTO;
 import com.smu.portlogisticsdistributionsystem.entity.Ship;
 import com.smu.portlogisticsdistributionsystem.mapper.ShipMapper;
 import com.smu.portlogisticsdistributionsystem.service.ShipService;
+import com.smu.portlogisticsdistributionsystem.vo.ShipVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
@@ -18,10 +18,9 @@ import java.util.List;
 @Service
 public class ShipServiceImpl extends ServiceImpl<ShipMapper, Ship> implements ShipService {
     @Override
-    public Page<Ship> select(int pageNum, int pageSize) {
-        Page<Ship> p = new Page<>(pageNum, pageSize);
-        LambdaQueryWrapper<Ship> q = new LambdaQueryWrapper<>();
-        return baseMapper.selectPage(p, q);
+    public Page<ShipVO> select(int pageNum, int pageSize) {
+        Page<ShipVO> p = new Page<>(pageNum, pageSize);
+        return baseMapper.selectPageWithCompany(p);
     }
 
     @Override

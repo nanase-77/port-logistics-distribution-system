@@ -3,8 +3,8 @@ package com.smu.portlogisticsdistributionsystem.controller.customer;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.smu.portlogisticsdistributionsystem.common.Result;
 import com.smu.portlogisticsdistributionsystem.dto.ContainerQueryDTO;
-import com.smu.portlogisticsdistributionsystem.entity.Container;
 import com.smu.portlogisticsdistributionsystem.service.ContainerService;
+import com.smu.portlogisticsdistributionsystem.vo.ContainerVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,10 +20,10 @@ public class CustomerContainerController {
 
     @GetMapping("/select")
     @ApiOperation("查询集装箱")
-    public Result<Page<Container>> select(@RequestParam(defaultValue = "1") int pageNum,
+    public Result<Page<ContainerVO>> select(@RequestParam(defaultValue = "1") int pageNum,
                                            @RequestParam(defaultValue = "10") int pageSize,
                                            ContainerQueryDTO containerQueryDTO) {
-        Page<Container> page = containerService.select(pageNum, pageSize, containerQueryDTO);
+        Page<ContainerVO> page = containerService.select(pageNum, pageSize, containerQueryDTO);
         return Result.success(page);
     }
 }

@@ -1,9 +1,9 @@
 <template>
   <div>
     <el-card class="search-card">
-      <el-input 
-        v-model="searchCompany" 
-        placeholder="输入公司名称查询" 
+      <el-input
+        v-model="searchCompany"
+        placeholder="输入公司名称查询"
         style="width: 300px;"
         @keyup.enter="handleSearch"
       >
@@ -32,14 +32,19 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getCompanies } from '@/api/companies'
+import { getCompanies } from '@/api/customerCompany'
 
 const searchCompany = ref('')
 
 const companies = ref([])
 
 const fetchData = async () => {
-  try { const res = await getCompanies(); companies.value = res.records || res || [] } catch { /* ignore */ }
+  try {
+    const res = await getCompanies()
+    companies.value = res.records || res || []
+  } catch {
+    ElMessage.error('获取公司列表失败')
+  }
 }
 
 onMounted(() => {

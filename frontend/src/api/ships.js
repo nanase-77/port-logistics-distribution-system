@@ -2,7 +2,7 @@ import request from '@/utils/request'
 
 export const getShips = (params) => {
   return request({
-    url: '/ship/select',
+    url: '/admin/ship/select',
     method: 'get',
     params: { pageNum: 1, pageSize: 100, ...params }
   })
@@ -10,7 +10,7 @@ export const getShips = (params) => {
 
 export const addShip = (data) => {
   return request({
-    url: '/ship/add',
+    url: '/admin/ship/add',
     method: 'post',
     data
   })
@@ -18,7 +18,7 @@ export const addShip = (data) => {
 
 export const updateShip = (data) => {
   return request({
-    url: '/ship/update',
+    url: '/admin/ship/update',
     method: 'put',
     data
   })
@@ -26,7 +26,7 @@ export const updateShip = (data) => {
 
 export const deleteShip = (id) => {
   return request({
-    url: `/ship/delete/${id}`,
+    url: `/admin/ship/delete/${id}`,
     method: 'delete'
   })
 }

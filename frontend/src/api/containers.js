@@ -2,7 +2,7 @@ import request from '@/utils/request'
 
 export const getContainers = (params) => {
   return request({
-    url: '/container/select',
+    url: '/admin/container/select',
     method: 'get',
     params: { pageNum: 1, pageSize: 100, ...params }
   })
@@ -10,7 +10,7 @@ export const getContainers = (params) => {
 
 export const addContainer = (data) => {
   return request({
-    url: '/container/add',
+    url: '/admin/container/add',
     method: 'post',
     data
   })
@@ -18,7 +18,7 @@ export const addContainer = (data) => {
 
 export const updateContainer = (data) => {
   return request({
-    url: '/container/update',
+    url: '/admin/container/update',
     method: 'put',
     data
   })
@@ -26,7 +26,7 @@ export const updateContainer = (data) => {
 
 export const deleteContainer = (id) => {
   return request({
-    url: `/container/delete/${id}`,
+    url: `/admin/container/delete/${id}`,
     method: 'delete'
   })
 }

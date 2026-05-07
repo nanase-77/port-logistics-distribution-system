@@ -26,9 +26,7 @@
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column prop="content" label="货物描述" width="200" />
         <el-table-column prop="size" label="尺寸" width="100" />
-        <el-table-column label="所属公司" width="160">
-          <template #default="{ row }">{{ getCompanyName(row.companyId) }}</template>
-        </el-table-column>
+        <el-table-column prop="companyName" label="所属公司" width="160" />
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" width="200">
           <template #default="{ row }">
@@ -52,7 +50,7 @@
         </el-form-item>
         <el-form-item label="所属公司">
           <el-select v-model="form.companyId" style="width: 100%;">
-            <el-option v-for="company in companies" :key="company.id" :label="company.name" :value="company.id" />
+            <el-option v-for="company in companies" :key="company.id" :label="company.companyName" :value="company.id" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -98,11 +96,6 @@ onMounted(() => {
   fetchData()
 })
 
-const getCompanyName = (companyId) => {
-  const company = companies.value.find(c => c.id === companyId)
-  return company ? company.name : `公司${companyId}`
-}
-
 const filteredContainers = computed(() => {
   if (!searchContent.value) return containers.value
   return containers.value.filter(item => item.content.includes(searchContent.value))
@@ -121,14 +114,14 @@ const form = reactive({
   id: null,
   content: '',
   size: '20英尺',
-  companyId: 1
+  companyId: null
 })
 
 const resetForm = () => {
   form.id = null
   form.content = ''
   form.size = '20英尺'
-  form.companyId = 1
+  form.companyId = null
 }
 
 const openAddModal = () => {
@@ -151,12 +144,22 @@ const handleSave = async () => {
     ElMessage.warning('请输入货物描述')
     return
   }
+  if (!form.companyId) {
+    ElMessage.warning('请选择所属公司')
+    return
+  }
   try {
+    const data = {
+      id: form.id,
+      content: form.content,
+      size: form.size,
+      companyId: form.companyId
+    }
     if (isEdit.value) {
-      await updateContainer({ id: form.id, content: form.content, companyId: form.companyId })
+      await updateContainer(data)
       ElMessage.success('集装箱信息已更新')
     } else {
-      await addContainer({ content: form.content, companyId: form.companyId })
+      await addContainer(data)
       ElMessage.success('集装箱已创建')
     }
     showModal.value = false

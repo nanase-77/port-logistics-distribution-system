@@ -5,9 +5,10 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.smu.portlogisticsdistributionsystem.dto.CarDTO;
 import com.smu.portlogisticsdistributionsystem.dto.CarQueryDTO;
 import com.smu.portlogisticsdistributionsystem.entity.Car;
+import com.smu.portlogisticsdistributionsystem.vo.CarVO;
 
 public interface CarService extends IService<Car> {
-    Page<Car> select(int pageNum, int pageSize, CarQueryDTO carQueryDTO);
+    Page<CarVO> select(int pageNum, int pageSize);
 
     void add(CarDTO carDTO);
 

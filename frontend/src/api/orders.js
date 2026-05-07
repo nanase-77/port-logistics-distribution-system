@@ -2,7 +2,7 @@ import request from '@/utils/request'
 
 export const getOrders = (params) => {
   return request({
-    url: '/order/select',
+    url: '/api/admin/order/select',
     method: 'get',
     params: { pageNum: 1, pageSize: 100, ...params }
   })
@@ -10,7 +10,7 @@ export const getOrders = (params) => {
 
 export const addOrder = (data) => {
   return request({
-    url: '/order/add',
+    url: '/api/admin/order/add',
     method: 'post',
     data
   })
@@ -18,7 +18,7 @@ export const addOrder = (data) => {
 
 export const updateOrder = (data) => {
   return request({
-    url: '/order/update',
+    url: '/api/admin/order/update',
     method: 'put',
     data
   })
@@ -26,7 +26,7 @@ export const updateOrder = (data) => {
 
 export const deleteOrder = (id) => {
   return request({
-    url: `/order/delete/${id}`,
+    url: `/api/admin/order/delete/${id}`,
     method: 'delete'
   })
 }

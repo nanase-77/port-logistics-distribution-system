@@ -2,7 +2,7 @@ import request from '@/utils/request'
 
 export const getLogistics = (params) => {
   return request({
-    url: '/logistic/select',
+    url: '/api/admin/logistic/select',
     method: 'get',
     params: { pageNum: 1, pageSize: 100, ...params }
   })
@@ -10,7 +10,7 @@ export const getLogistics = (params) => {
 
 export const addLogistics = (data) => {
   return request({
-    url: '/logistic/add',
+    url: '/api/admin/logistic/add',
     method: 'post',
     data
   })
@@ -18,7 +18,7 @@ export const addLogistics = (data) => {
 
 export const updateLogistics = (data) => {
   return request({
-    url: '/logistic/update',
+    url: '/api/admin/logistic/update',
     method: 'put',
     data
   })
@@ -26,7 +26,7 @@ export const updateLogistics = (data) => {
 
 export const deleteLogistics = (id) => {
   return request({
-    url: `/logistic/delete/${id}`,
+    url: `/api/admin/logistic/delete/${id}`,
     method: 'delete'
   })
 }
