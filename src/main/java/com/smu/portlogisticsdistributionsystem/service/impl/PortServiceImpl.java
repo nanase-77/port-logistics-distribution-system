@@ -47,7 +47,7 @@ public class PortServiceImpl extends ServiceImpl<PortMapper, Port> implements Po
         for(int i=0;i<ids.length();i++){
             idss.add(Integer.valueOf(id[i]));
         }
-        portMapper.deleteByIds(idss);
+        portMapper.deleteBatchIds(idss);
     }
 
     @Override

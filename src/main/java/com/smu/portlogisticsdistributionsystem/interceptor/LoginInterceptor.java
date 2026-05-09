@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Component
-public class LoginIntercepter implements HandlerInterceptor {
+public class LoginInterceptor implements HandlerInterceptor {
 
     @Autowired
     StringRedisTemplate stringRedisTemplate;
