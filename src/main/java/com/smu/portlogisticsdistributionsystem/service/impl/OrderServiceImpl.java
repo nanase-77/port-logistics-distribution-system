@@ -8,6 +8,7 @@ import com.smu.portlogisticsdistributionsystem.dto.OrderQueryDTO;
 import com.smu.portlogisticsdistributionsystem.entity.Order;
 import com.smu.portlogisticsdistributionsystem.mapper.OrderMapper;
 import com.smu.portlogisticsdistributionsystem.service.OrderService;
+import com.smu.portlogisticsdistributionsystem.util.UserHolder;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -27,7 +28,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
                 q.like("order_number", orderQueryDTO.getOrderNumber());
             }
             if (orderQueryDTO.getUserId() != null) {
-                q.eq("user_id", orderQueryDTO.getUserId());
+                q.eq("user_id", UserHolder.getUser().getId());
             }
             if (StringUtils.hasText(orderQueryDTO.getStatus())) {
                 q.eq("status", orderQueryDTO.getStatus());

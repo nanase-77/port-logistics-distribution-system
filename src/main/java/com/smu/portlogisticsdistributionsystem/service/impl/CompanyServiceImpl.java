@@ -9,6 +9,8 @@ import com.smu.portlogisticsdistributionsystem.entity.Company;
 import com.smu.portlogisticsdistributionsystem.mapper.CompanyMapper;
 import com.smu.portlogisticsdistributionsystem.service.CompanyService;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -18,6 +20,8 @@ import java.util.List;
 
 @Service
 public class CompanyServiceImpl extends ServiceImpl<CompanyMapper, Company> implements CompanyService {
+    @Autowired
+    StringRedisTemplate stringRedisTemplate;
     @Override
     public Page<Company> select(int pageNum, int pageSize, CompanyQueryDTO companyQueryDTO) {
         Page<Company> p = new Page<>(pageNum, pageSize);

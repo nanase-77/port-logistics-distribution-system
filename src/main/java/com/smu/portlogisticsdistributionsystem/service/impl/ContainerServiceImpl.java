@@ -1,5 +1,6 @@
 package com.smu.portlogisticsdistributionsystem.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.smu.portlogisticsdistributionsystem.dto.ContainerDTO;
@@ -7,6 +8,7 @@ import com.smu.portlogisticsdistributionsystem.dto.ContainerQueryDTO;
 import com.smu.portlogisticsdistributionsystem.entity.Container;
 import com.smu.portlogisticsdistributionsystem.mapper.ContainerMapper;
 import com.smu.portlogisticsdistributionsystem.service.ContainerService;
+import com.smu.portlogisticsdistributionsystem.util.UserHolder;
 import com.smu.portlogisticsdistributionsystem.vo.ContainerVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -17,9 +19,11 @@ import java.util.List;
 
 @Service
 public class ContainerServiceImpl extends ServiceImpl<ContainerMapper, Container> implements ContainerService {
+    UserHolder userHolder;
     @Override
     public Page<ContainerVO> select(int pageNum, int pageSize) {
         Page<ContainerVO> p = new Page<>(pageNum, pageSize);
+
         return baseMapper.selectPageWithCompany(p);
     }
 

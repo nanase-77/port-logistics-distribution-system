@@ -2,7 +2,7 @@ import request from '@/utils/request'
 
 export const getDashboardData = () => {
   return request({
-    url: '/api/customer/dashboard/data',
+    url: '/customer/dashboard/data',
     method: 'get'
   })
 }

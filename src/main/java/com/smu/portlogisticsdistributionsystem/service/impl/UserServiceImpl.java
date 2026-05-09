@@ -55,7 +55,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         result.put("token", token);
         result.put("username", user.getUsername());
         result.put("role", role);
-        stringRedisTemplate.opsForHash().putAll(RedisConstants.LOGIN_SESSION+token,result);
+        Map<String,Object> redisData=new HashMap<>();
+        redisData.put("id",user.getId().toString());
+        redisData.put("username",user.getUsername());
+        redisData.put("role",user.getState().toString());
+        stringRedisTemplate.opsForHash().putAll(RedisConstants.LOGIN_SESSION+token,redisData);
         stringRedisTemplate.expire(RedisConstants.LOGIN_SESSION+token,30, TimeUnit.MINUTES);
         return result;
     }
