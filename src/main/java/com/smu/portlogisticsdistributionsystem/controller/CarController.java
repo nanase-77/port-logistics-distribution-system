@@ -21,9 +21,9 @@ public class CarController {
 
     @GetMapping("/select")
     @ApiOperation("查询车辆")
-    public Page<Car> select(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize,
-                           @RequestParam(required = false) @RequestBody CarQueryDTO carQueryDTO) {
-        return carService.select(pageNum, pageSize, carQueryDTO);
+    public Result<Page<Car>> select(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize,
+                           CarQueryDTO carQueryDTO) {
+        return Result.success(carService.select(pageNum, pageSize, carQueryDTO));
     }
 
     @ApiOperation("添加车辆")

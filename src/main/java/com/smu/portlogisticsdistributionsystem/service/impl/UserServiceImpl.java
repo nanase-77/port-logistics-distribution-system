@@ -9,7 +9,6 @@ import com.smu.portlogisticsdistributionsystem.mapper.UserMapper;
 import com.smu.portlogisticsdistributionsystem.service.UserService;
 import com.smu.portlogisticsdistributionsystem.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -28,6 +27,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Autowired
     private JwtUtil jwtUtil;
+    
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
@@ -50,8 +50,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         result.put("token", token);
         result.put("username", user.getUsername());
         result.put("role", role);
-        stringRedisTemplate.opsForHash().putAll(RedisConstants.LOGIN_SESSION+token,result);
-        stringRedisTemplate.expire(RedisConstants.LOGIN_SESSION+token,30, TimeUnit.MINUTES);
+        
+        // 将用户信息存入Redis，token作为key
+        stringRedisTemplate.opsForHash().putAll(RedisConstants.LOGIN_SESSION + token, result);
+        // 设置过期时间30分钟
+        stringRedisTemplate.expire(RedisConstants.LOGIN_SESSION + token, 30, TimeUnit.MINUTES);
+        
         return result;
     }
 
@@ -75,5 +79,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setUpdateTime(LocalDateTime.now());
 
         return this.save(user);
+    }
+
+    @Override
+    public void logout(String token) {
+        // 从Redis中删除token对应的用户信息
+        stringRedisTemplate.delete(RedisConstants.LOGIN_SESSION + token);
     }
 }

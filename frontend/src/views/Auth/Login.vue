@@ -55,7 +55,7 @@ const router = useRouter()
 const userStore = useUserStore()
 const loginFormRef = ref()
 const loading = ref(false)
-const loginType = ref('user') // 'admin' 或 'user'
+const loginType = ref('admin') // 'admin' 或 'user'
 
 const loginForm = reactive({
   username: '',

@@ -22,7 +22,7 @@
           </div>
         </div>
       </template>
-      <el-table :data="filteredContainers" stripe>
+      <el-table :data="filteredContainers" stripe style="width: 100%;">
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column prop="content" label="货物描述" width="200" />
         <el-table-column prop="size" label="尺寸" width="100" />
@@ -100,7 +100,7 @@ onMounted(() => {
 
 const getCompanyName = (companyId) => {
   const company = companies.value.find(c => c.id === companyId)
-  return company ? company.name : `公司${companyId}`
+  return company ? company.companyName : `公司${companyId}`
 }
 
 const filteredContainers = computed(() => {

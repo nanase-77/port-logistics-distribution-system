@@ -21,9 +21,9 @@ public class ShipController {
 
     @GetMapping("/select")
     @ApiOperation("查询船舶")
-    public Page<Ship> select(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize,
-                               @RequestParam(required = false) @RequestBody ShipQueryDTO shipQueryDTO) {
-        return shipService.select(pageNum, pageSize, shipQueryDTO);
+    public Result<Page<Ship>> select(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize,
+                               ShipQueryDTO shipQueryDTO) {
+        return Result.success(shipService.select(pageNum, pageSize, shipQueryDTO));
     }
 
     @ApiOperation("添加船舶")

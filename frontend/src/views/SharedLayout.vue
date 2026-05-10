@@ -91,7 +91,7 @@ const menuItems = computed(() => role.value === 'admin' ? adminMenuItems : userM
 const routePrefix = computed(() => role.value === 'admin' ? '/admin' : '/customer')
 
 const handleMenuSelect = (index) => {
-  const targetPath = index === 'ai' ? '/ai/chat' : `${routePrefix.value}/${index}`
+  const targetPath = `${routePrefix.value}/${index}`
   if (route.path !== targetPath) {
     router.push(targetPath).catch(() => {})
   }
@@ -108,6 +108,7 @@ const handleLogout = () => {
 .dashboard-container {
   height: 100vh;
   display: flex;
+  overflow: hidden;
 }
 
 :deep(.el-container) {
@@ -116,11 +117,13 @@ const handleLogout = () => {
 }
 
 :deep(.el-aside) {
-  height: 100%;
-  position: fixed;
+  position: fixed !important;
   left: 0;
   top: 0;
   bottom: 0;
+  width: 200px !important;
+  z-index: 999;
+  overflow-y: auto;
 }
 
 .sidebar {
@@ -129,6 +132,11 @@ const handleLogout = () => {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 200px;
 }
 
 .sidebar-title {
@@ -155,6 +163,9 @@ const handleLogout = () => {
   background-color: white;
   border-bottom: 1px solid #e4e7ed;
   padding: 0 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .user-info {
@@ -168,5 +179,6 @@ const handleLogout = () => {
   margin-left: 200px;
   min-height: 100vh;
   padding: 20px;
+  overflow-y: auto;
 }
 </style>

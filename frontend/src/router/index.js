@@ -81,6 +81,11 @@ const routes = [
         path: 'report',
         name: 'AdminReport',
         component: () => import('@/views/Admin/Report.vue')
+      },
+      {
+        path: 'ai',
+        name: 'AdminAI',
+        component: () => import('@/views/AIAgent/Chat.vue')
       }
     ]
   },
@@ -132,14 +137,13 @@ const routes = [
         path: 'ports',
         name: 'CustomerPorts',
         component: () => import('@/views/Customer/Ports.vue')
+      },
+      {
+        path: 'ai',
+        name: 'CustomerAI',
+        component: () => import('@/views/AIAgent/Chat.vue')
       }
     ]
-  },
-  {
-    path: '/ai/chat',
-    name: 'AIChat',
-    component: () => import('@/views/AIAgent/Chat.vue'),
-    meta: { requiresAuth: true }
   }
 ]
 

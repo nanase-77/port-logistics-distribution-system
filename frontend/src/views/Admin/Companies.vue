@@ -22,9 +22,9 @@
           </div>
         </div>
       </template>
-      <el-table :data="filteredCompanies" stripe>
+      <el-table :data="filteredCompanies" stripe style="width: 100%;">
         <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column prop="name" label="公司名称" width="200" />
+        <el-table-column prop="companyName" label="公司名称" width="200" />
         <el-table-column prop="country" label="所在国家" width="120" />
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" width="200">
@@ -83,12 +83,12 @@ onMounted(() => {
 
 const filteredCompanies = computed(() => {
   if (!searchCompanyName.value) return companies.value
-  return companies.value.filter(item => item.name.includes(searchCompanyName.value))
+  return companies.value.filter(item => item.companyName?.includes(searchCompanyName.value))
 })
 
 const handleSearch = () => {
   if (searchCompanyName.value) {
-    const found = companies.value.find(item => item.name.includes(searchCompanyName.value))
+    const found = companies.value.find(item => item.companyName?.includes(searchCompanyName.value))
     if (!found) {
       ElMessage.warning('未找到该公司')
     }
@@ -116,7 +116,7 @@ const openAddModal = () => {
 const openEditModal = (row) => {
   isEdit.value = true
   form.id = row.id
-  form.name = row.name
+  form.name = row.companyName
   form.country = row.country
   showModal.value = true
 }

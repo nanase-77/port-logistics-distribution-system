@@ -22,9 +22,9 @@
           </div>
         </div>
       </template>
-      <el-table :data="filteredShips" stripe>
+      <el-table :data="filteredShips" stripe style="width: 100%;">
         <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column prop="name" label="船舶名称" width="160" />
+        <el-table-column prop="shipName" label="船舶名称" width="160" />
         <el-table-column label="所属公司" width="160">
           <template #default="{ row }">{{ getCompanyName(row.companyId) }}</template>
         </el-table-column>
@@ -45,7 +45,7 @@
         </el-form-item>
         <el-form-item label="所属公司">
           <el-select v-model="form.companyId" style="width: 100%;">
-            <el-option v-for="company in companies" :key="company.id" :label="company.name" :value="company.id" />
+            <el-option v-for="company in companies" :key="company.id" :label="company.companyName" :value="company.id" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -98,12 +98,12 @@ const getCompanyName = (companyId) => {
 
 const filteredShips = computed(() => {
   if (!searchShipName.value) return ships.value
-  return ships.value.filter(item => item.name.includes(searchShipName.value))
+  return ships.value.filter(item => item.shipName?.includes(searchShipName.value))
 })
 
 const handleSearch = () => {
   if (searchShipName.value) {
-    const found = ships.value.find(item => item.name.includes(searchShipName.value))
+    const found = ships.value.find(item => item.shipName?.includes(searchShipName.value))
     if (!found) {
       ElMessage.warning('未找到该船舶')
     }
@@ -131,7 +131,7 @@ const openAddModal = () => {
 const openEditModal = (row) => {
   isEdit.value = true
   form.id = row.id
-  form.name = row.name
+  form.name = row.shipName
   form.companyId = row.companyId
   showModal.value = true
 }

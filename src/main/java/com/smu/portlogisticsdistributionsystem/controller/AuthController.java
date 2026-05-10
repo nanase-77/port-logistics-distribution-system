@@ -36,4 +36,10 @@ public class AuthController {
             return Result.error(400, e.getMessage());
         }
     }
+
+    @PostMapping("/logout")
+    public Result<String> logout(@RequestParam String token) {
+        userService.logout(token);
+        return Result.success("登出成功");
+    }
 }

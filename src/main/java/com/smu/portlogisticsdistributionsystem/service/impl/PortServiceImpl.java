@@ -20,7 +20,6 @@ import java.util.List;
 
 @Service
 public class PortServiceImpl extends ServiceImpl<PortMapper, Port> implements PortService {
-    PortMapper portMapper;
     @Override
     public Page<Port> select(int pageNum, int pageSize, PortQueryDTO portQueryDTO) {
         Page<Port> p=new Page<>(pageNum,pageSize);
@@ -28,7 +27,7 @@ public class PortServiceImpl extends ServiceImpl<PortMapper, Port> implements Po
         if(StringUtils.hasText(portQueryDTO.getPortName())){
             q.like("port_name",portQueryDTO.getPortName());
         }
-        return portMapper.selectPage(p,q);
+        return baseMapper.selectPage(p,q);
     }
 
     @Override
@@ -37,24 +36,24 @@ public class PortServiceImpl extends ServiceImpl<PortMapper, Port> implements Po
         BeanUtils.copyProperties(portDTO,p);
         p.setCreateTime(LocalDateTime.now());
         p.setUpdateTime(LocalDateTime.now());
-        portMapper.insert(p);
+        baseMapper.insert(p);
     }
 
     @Override
     public void delete(String ids) {
         String[] id=ids.split(",");
         List<Integer> idss=new ArrayList<>();
-        for(int i=0;i<ids.length();i++){
+        for(int i=0;i<id.length;i++){
             idss.add(Integer.valueOf(id[i]));
         }
-        portMapper.deleteBatchIds(idss);
+        baseMapper.deleteBatchIds(idss);
     }
 
     @Override
     public void update(PortDTO portDTO) {
         Port port=new Port();
         BeanUtils.copyProperties(portDTO,port);
-        portMapper.updateById(port);
+        baseMapper.updateById(port);
     }
 
 }

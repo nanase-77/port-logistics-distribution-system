@@ -22,7 +22,7 @@
           </div>
         </div>
       </template>
-      <el-table :data="filteredLogistics" stripe>
+      <el-table :data="filteredLogistics" stripe style="width: 100%;">
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column label="订单号" width="160">
           <template #default="{ row }">{{ getOrderNumber(row.orderId) }}</template>
@@ -62,24 +62,24 @@
         </el-form-item>
         <el-form-item label="起始港口">
           <el-select v-model="form.startPortId" style="width: 100%;">
-            <el-option v-for="port in ports" :key="port.id" :label="port.name" :value="port.id" />
+            <el-option v-for="port in ports" :key="port.id" :label="port.portName" :value="port.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="终点港口">
           <el-select v-model="form.endPortId" style="width: 100%;">
-            <el-option v-for="port in ports" :key="port.id" :label="port.name" :value="port.id" />
+            <el-option v-for="port in ports" :key="port.id" :label="port.portName" :value="port.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="当前港口">
           <el-select v-model="form.currentPortId" style="width: 100%;" placeholder="请选择">
             <el-option :value="null" label="-" />
-            <el-option v-for="port in ports" :key="port.id" :label="port.name" :value="port.id" />
+            <el-option v-for="port in ports" :key="port.id" :label="port.portName" :value="port.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="运输船舶">
           <el-select v-model="form.shipId" style="width: 100%;" placeholder="请选择">
             <el-option :value="null" label="-" />
-            <el-option v-for="ship in ships" :key="ship.id" :label="ship.name" :value="ship.id" />
+            <el-option v-for="ship in ships" :key="ship.id" :label="ship.shipName" :value="ship.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="运输车辆">
@@ -190,13 +190,13 @@ const getOrderNumber = (orderId) => {
 const getPortName = (portId) => {
   if (!portId) return '-'
   const port = ports.value.find(p => p.id === portId)
-  return port ? port.name : `港口${portId}`
+  return port ? port.portName : `港口${portId}`
 }
 
 const getShipName = (shipId) => {
   if (!shipId) return '-'
   const ship = ships.value.find(s => s.id === shipId)
-  return ship ? ship.name : `船舶${shipId}`
+  return ship ? ship.shipName : `船舶${shipId}`
 }
 
 const getCarName = (carId) => {

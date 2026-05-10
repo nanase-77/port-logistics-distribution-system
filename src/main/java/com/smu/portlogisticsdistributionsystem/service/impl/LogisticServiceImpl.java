@@ -21,23 +21,32 @@ public class LogisticServiceImpl extends ServiceImpl<LogisticMapper, Logistic> i
     public Page<Logistic> select(int pageNum, int pageSize, LogisticQueryDTO logisticQueryDTO) {
         Page<Logistic> p = new Page<>(pageNum, pageSize);
         QueryWrapper<Logistic> q = new QueryWrapper<>();
-        if (logisticQueryDTO.getOrderId() != null) {
-            q.eq("order_id", logisticQueryDTO.getOrderId());
-        }
-        if (logisticQueryDTO.getStartPortId() != null) {
-            q.eq("start_port_id", logisticQueryDTO.getStartPortId());
-        }
-        if (logisticQueryDTO.getEndPortId() != null) {
-            q.eq("end_port_id", logisticQueryDTO.getEndPortId());
-        }
-        if (logisticQueryDTO.getCurrentPortId() != null) {
-            q.eq("current_port_id", logisticQueryDTO.getCurrentPortId());
-        }
-        if (logisticQueryDTO.getShipId() != null) {
-            q.eq("ship_id", logisticQueryDTO.getShipId());
-        }
-        if (logisticQueryDTO.getCarId() != null) {
-            q.eq("car_id", logisticQueryDTO.getCarId());
+        if (logisticQueryDTO != null) {
+            Integer orderId = logisticQueryDTO.getOrderId();
+            Integer startPortId = logisticQueryDTO.getStartPortId();
+            Integer endPortId = logisticQueryDTO.getEndPortId();
+            Integer currentPortId = logisticQueryDTO.getCurrentPortId();
+            Integer shipId = logisticQueryDTO.getShipId();
+            Integer carId = logisticQueryDTO.getCarId();
+            
+            if (orderId != null) {
+                q.eq("order_id", orderId);
+            }
+            if (startPortId != null) {
+                q.eq("start_port_id", startPortId);
+            }
+            if (endPortId != null) {
+                q.eq("end_port_id", endPortId);
+            }
+            if (currentPortId != null) {
+                q.eq("current_port_id", currentPortId);
+            }
+            if (shipId != null) {
+                q.eq("ship_id", shipId);
+            }
+            if (carId != null) {
+                q.eq("car_id", carId);
+            }
         }
         return baseMapper.selectPage(p, q);
     }

@@ -10,4 +10,5 @@ import java.util.Map;
 public interface UserService extends IService<User> {
     Map<String, Object> login(UserLoginDTO loginDTO);
     boolean register(UserRegisterDTO registerDTO);
+    void logout(String token);
 }

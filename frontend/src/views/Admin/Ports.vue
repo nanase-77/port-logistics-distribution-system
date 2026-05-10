@@ -22,9 +22,9 @@
           </div>
         </div>
       </template>
-      <el-table :data="filteredPorts" stripe>
+      <el-table :data="filteredPorts" stripe style="width: 100%;">
         <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column prop="name" label="港口名称" width="140" />
+        <el-table-column prop="portName" label="港口名称" width="140" />
         <el-table-column prop="longitude" label="经度" width="120" />
         <el-table-column prop="latitude" label="纬度" width="120" />
         <el-table-column prop="country" label="所在国家" width="120" />
@@ -87,12 +87,12 @@ onMounted(() => {
 
 const filteredPorts = computed(() => {
   if (!searchPortName.value) return ports.value
-  return ports.value.filter(item => item.name.includes(searchPortName.value))
+  return ports.value.filter(item => item.portName?.includes(searchPortName.value))
 })
 
 const handleSearch = () => {
   if (searchPortName.value) {
-    const found = ports.value.find(item => item.name.includes(searchPortName.value))
+    const found = ports.value.find(item => item.portName?.includes(searchPortName.value))
     if (!found) {
       ElMessage.warning('未找到该港口')
     }
@@ -124,7 +124,7 @@ const openAddModal = () => {
 const openEditModal = (row) => {
   isEdit.value = true
   form.id = row.id
-  form.name = row.name
+  form.name = row.portName
   form.longitude = row.longitude
   form.latitude = row.latitude
   form.country = row.country

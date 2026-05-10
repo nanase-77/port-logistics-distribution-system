@@ -21,9 +21,9 @@ public class PortController {
     PortService portService;
     @GetMapping("/select")
     @ApiOperation("查询港口")
-    public Page<Port> select(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize
-    , @RequestParam(required = false) @RequestBody PortQueryDTO portDTO){
-        return portService.select(pageNum,pageSize,portDTO);
+    public Result<Page<Port>> select(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize
+    , PortQueryDTO portDTO){
+        return Result.success(portService.select(pageNum,pageSize,portDTO));
     }
     @ApiOperation("添加港口")
     @PostMapping("/add")

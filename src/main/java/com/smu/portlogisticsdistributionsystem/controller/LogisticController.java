@@ -21,9 +21,9 @@ public class LogisticController {
 
     @GetMapping("/select")
     @ApiOperation("查询物流跟踪")
-    public Page<Logistic> select(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize,
-                               @RequestParam(required = false) @RequestBody LogisticQueryDTO logisticQueryDTO) {
-        return logisticService.select(pageNum, pageSize, logisticQueryDTO);
+    public Result<Page<Logistic>> select(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize,
+                               LogisticQueryDTO logisticQueryDTO) {
+        return Result.success(logisticService.select(pageNum, pageSize, logisticQueryDTO));
     }
 
     @ApiOperation("添加物流跟踪")

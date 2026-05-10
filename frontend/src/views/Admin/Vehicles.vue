@@ -22,7 +22,7 @@
           </div>
         </div>
       </template>
-      <el-table :data="filteredVehicles" stripe>
+      <el-table :data="filteredVehicles" stripe style="width: 100%;">
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column prop="carName" label="拖车编号" width="140" />
         <el-table-column label="所在港口" width="140">
@@ -104,7 +104,7 @@ onMounted(() => {
 
 const getPortName = (portId) => {
   const port = ports.value.find(p => p.id === portId)
-  return port ? port.name : `港口${portId}`
+  return port ? port.portName : `港口${portId}`
 }
 
 const filteredVehicles = computed(() => {

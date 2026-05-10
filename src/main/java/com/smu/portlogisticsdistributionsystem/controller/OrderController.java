@@ -21,9 +21,9 @@ public class OrderController {
 
     @GetMapping("/select")
     @ApiOperation("查询订单")
-    public Page<Order> select(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize,
-                               @RequestParam(required = false) @RequestBody OrderQueryDTO orderQueryDTO) {
-        return orderService.select(pageNum, pageSize, orderQueryDTO);
+    public Result<Page<Order>> select(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize,
+                               OrderQueryDTO orderQueryDTO) {
+        return Result.success(orderService.select(pageNum, pageSize, orderQueryDTO));
     }
 
     @ApiOperation("添加订单")

@@ -21,9 +21,9 @@ public class CompanyController {
 
     @GetMapping("/select")
     @ApiOperation("查询公司")
-    public Page<Company> select(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize,
-                               @RequestParam(required = false) @RequestBody CompanyQueryDTO companyQueryDTO) {
-        return companyService.select(pageNum, pageSize, companyQueryDTO);
+    public Result<Page<Company>> select(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize,
+                               CompanyQueryDTO companyQueryDTO) {
+        return Result.success(companyService.select(pageNum, pageSize, companyQueryDTO));
     }
 
     @ApiOperation("添加公司")

@@ -21,9 +21,9 @@ public class ContainerController {
 
     @GetMapping("/select")
     @ApiOperation("查询集装箱")
-    public Page<Container> select(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize,
-                               @RequestParam(required = false) @RequestBody ContainerQueryDTO containerQueryDTO) {
-        return containerService.select(pageNum, pageSize, containerQueryDTO);
+    public Result<Page<Container>> select(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize,
+                               ContainerQueryDTO containerQueryDTO) {
+        return Result.success(containerService.select(pageNum, pageSize, containerQueryDTO));
     }
 
     @ApiOperation("添加集装箱")

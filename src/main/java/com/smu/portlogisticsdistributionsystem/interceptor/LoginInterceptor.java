@@ -31,15 +31,15 @@ public class LoginInterceptor implements HandlerInterceptor {
         String token = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader;
         Map<Object, Object> entries = stringRedisTemplate.opsForHash().entries(RedisConstants.LOGIN_SESSION + token);
 //        3.判断用户是否存在
-        UserLoginDTO userLoginDTO = BeanUtil.fillBeanWithMap(entries,new UserLoginDTO(),false);
-        if(userLoginDTO==null){
+        UserLoginDTO userLoginDTO = BeanUtil.fillBeanWithMap(entries, new UserLoginDTO(), false);
+        if (userLoginDTO == null) {
             response.setStatus(401);
             return false;
         }
 
         UserHolder.saveUser(userLoginDTO);
 
-        stringRedisTemplate.expire(RedisConstants.LOGIN_SESSION + token,30, TimeUnit.MINUTES);
+        stringRedisTemplate.expire(RedisConstants.LOGIN_SESSION + token, 30, TimeUnit.MINUTES);
         return true;
     }
 
