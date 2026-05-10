@@ -136,6 +136,26 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
+        
+        <!-- Neo4j Java Driver -->
+        <dependency>
+            <groupId>org.neo4j.driver</groupId>
+            <artifactId>neo4j-java-driver</artifactId>
+            <version>5.23.0</version>
+        </dependency>
+        
+        <!-- Spring Data Neo4j -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-neo4j</artifactId>
+        </dependency>
+        
+        <!-- GeoLite2 for distance calculation -->
+        <dependency>
+            <groupId>com.maxmind.geoip2</groupId>
+            <artifactId>geoip2</artifactId>
+            <version>4.0.0</version>
+        </dependency>
     </dependencies>
 
     <build>

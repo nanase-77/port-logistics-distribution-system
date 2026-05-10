@@ -8,15 +8,23 @@ import com.smu.portlogisticsdistributionsystem.dto.LogisticQueryDTO;
 import com.smu.portlogisticsdistributionsystem.entity.Logistic;
 import com.smu.portlogisticsdistributionsystem.mapper.LogisticMapper;
 import com.smu.portlogisticsdistributionsystem.service.LogisticService;
+import com.smu.portlogisticsdistributionsystem.service.PortGraphService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class LogisticServiceImpl extends ServiceImpl<LogisticMapper, Logistic> implements LogisticService {
+
+    private final PortGraphService portGraphService;
     @Override
     public Page<Logistic> select(int pageNum, int pageSize, LogisticQueryDTO logisticQueryDTO) {
         Page<Logistic> p = new Page<>(pageNum, pageSize);
@@ -52,29 +60,44 @@ public class LogisticServiceImpl extends ServiceImpl<LogisticMapper, Logistic> i
     }
 
     @Override
+    @Transactional
     public void add(LogisticDTO logisticDTO) {
         Logistic logistic = new Logistic();
         BeanUtils.copyProperties(logisticDTO, logistic);
         logistic.setCreateTime(LocalDateTime.now());
         logistic.setUpdateTime(LocalDateTime.now());
         baseMapper.insert(logistic);
+        
+        portGraphService.addLogisticToGraph(logistic);
+        log.info("Logistic {} added to MySQL and Neo4j", logistic.getId());
     }
 
     @Override
+    @Transactional
     public void delete(String ids) {
         String[] idArray = ids.split(",");
         List<Integer> idList = new ArrayList<>();
         for (String id : idArray) {
             idList.add(Integer.valueOf(id));
         }
+        
+        for (Integer logisticId : idList) {
+            portGraphService.removeLogisticFromGraph(logisticId.longValue());
+        }
+        
         baseMapper.deleteBatchIds(idList);
+        log.info("Logistics {} deleted from MySQL and Neo4j", ids);
     }
 
     @Override
+    @Transactional
     public void update(LogisticDTO logisticDTO) {
         Logistic logistic = new Logistic();
         BeanUtils.copyProperties(logisticDTO, logistic);
         logistic.setUpdateTime(LocalDateTime.now());
         baseMapper.updateById(logistic);
+        
+        portGraphService.updateLogisticInGraph(logistic);
+        log.info("Logistic {} updated in MySQL and Neo4j", logistic.getId());
     }
 }

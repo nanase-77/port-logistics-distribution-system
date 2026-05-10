@@ -15,6 +15,7 @@ public class Port {
     private Integer id;
     @TableField("port_name")
     private String portName;
+    private String country;
     private double longitude;
     private double latitude;
     @TableField("update_time")
