@@ -39,9 +39,8 @@
             <el-tag :type="getStatusType(row.status)">{{ row.status }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="关联集装箱" width="200">
-          <template #default="{ row }">{{ getContainerContents(row.containerIds) }}</template>
-        </el-table-column>
+        <el-table-column prop="containerIds" label="关联集装箱"/>
+
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" min-width="280">
           <template #default="{ row }">

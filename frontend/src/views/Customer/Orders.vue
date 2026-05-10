@@ -28,10 +28,8 @@
             <el-tag :type="getStatusType(row.status)">{{ row.status }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="startPort" label="起始港口" />
-        <el-table-column prop="endPort" label="目的港口" />
-        <el-table-column prop="cargoType" label="货物类型" />
-        <el-table-column prop="weight" label="重量(吨)" />
+        <el-table-column prop="containerIds" label="关联集装箱"/>
+
       </el-table>
     </el-card>
 
@@ -62,15 +60,24 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getMyOrders, addOrder } from '@/api/customerOrder'
+import { getContainers } from '@/api/containers'
 
 const showModal = ref(false)
 const statusFilter = ref('')
 const searchOrderNumber = ref('')
 
+const containers = ref([])
 const orders = ref([])
+
+const fetchContainers = async () => {
+  try {
+    const res = await getContainers()
+    containers.value = res.records || res || []
+  } catch { /* ignore */ }
+}
 
 const fetchData = async () => {
   try {
@@ -82,6 +89,7 @@ const fetchData = async () => {
 }
 
 onMounted(() => {
+  fetchContainers()
   fetchData()
 })
 
@@ -105,6 +113,16 @@ const getStatusType = (status) => {
   return statusMap[status] || 'info'
 }
 
+const getContainerContents = (containerIds) => {
+  if (!containerIds) return ''
+  const ids = containerIds.split(',').map(id => parseInt(id))
+  const contents = ids.map(id => {
+    const container = containers.value.find(c => c.id === id)
+    return container ? container.content : `集装箱${id}`
+  })
+  return contents.join(', ')
+}
+
 const handleSearch = () => {
   if (searchOrderNumber.value) {
     const found = orders.value.find(item => item.orderNumber.includes(searchOrderNumber.value))
@@ -114,7 +132,7 @@ const handleSearch = () => {
   }
 }
 
-const form = ref({
+const form = reactive({
   orderNumber: '',
   startPort: '',
   endPort: '',
@@ -123,11 +141,11 @@ const form = ref({
 })
 
 const resetForm = () => {
-  form.value.orderNumber = ''
-  form.value.startPort = ''
-  form.value.endPort = ''
-  form.value.cargoType = ''
-  form.value.weight = null
+  form.orderNumber = ''
+  form.startPort = ''
+  form.endPort = ''
+  form.cargoType = ''
+  form.weight = null
 }
 
 const openAddModal = () => {
@@ -136,12 +154,12 @@ const openAddModal = () => {
 }
 
 const handleSave = async () => {
-  if (!form.value.orderNumber) {
+  if (!form.orderNumber) {
     ElMessage.warning('请输入订单号')
     return
   }
   try {
-    await addOrder(form.value)
+    await addOrder(form)
     ElMessage.success('订单已创建')
     showModal.value = false
     fetchData()

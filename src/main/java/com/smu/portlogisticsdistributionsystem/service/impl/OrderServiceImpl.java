@@ -81,4 +81,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         order.setUpdateTime(LocalDateTime.now());
         baseMapper.insert(order);
     }
+
+    @Override
+    public Integer getOrderCount() {
+        return Integer.parseInt(String.valueOf(count()));
+    }
 }

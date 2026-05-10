@@ -52,10 +52,10 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { User, Document, Location, Van } from '@element-plus/icons-vue'
-import { getUsers } from '@/api/user'
-import { getOrders } from '@/api/orders'
+import {getUserCount} from '@/api/user'
+import { getOrderCount } from '@/api/orders'
 import { getPorts } from '@/api/ports'
-import { getShips } from '@/api/ships'
+import {getShipCount, getShips} from '@/api/ships'
 
 const stats = reactive({
   users: 0,
@@ -67,15 +67,17 @@ const stats = reactive({
 const fetchStats = async () => {
   try {
     const [usersRes, ordersRes, portsRes, shipsRes] = await Promise.all([
-      getUsers(),
-      getOrders(),
-      getPorts(),
-      getShips()
+      getUserCount(),
+      getOrderCount(),
+      // getPorts(),
+        0,
+      getShipCount()
     ])
-    stats.users = (usersRes.records || usersRes || []).length || usersRes.total || 0
-    stats.orders = (ordersRes.records || ordersRes || []).length || ordersRes.total || 0
-    stats.ports = (portsRes.records || portsRes || []).length || portsRes.total || 0
-    stats.ships = (shipsRes.records || shipsRes || []).length || shipsRes.total || 0
+    console.log("yyy"+shipsRes)
+    stats.users = usersRes || 0
+     stats.orders = ordersRes || 0
+     stats.ports = portsRes || 0
+     stats.ships = shipsRes || 0
   } catch { /* ignore */ }
 }
 

@@ -25,7 +25,10 @@ public class AdminShipController {
         Page<ShipVO> page = shipService.select(pageNum, pageSize);
         return Result.success(page);
     }
-
+    @GetMapping("/count")
+    public Result<Integer> getShipCount(){
+        return Result.success(shipService.getShipCount());
+    }
     @ApiOperation("添加船舶")
     @PostMapping("/add")
     public Result add(@RequestBody ShipDTO shipDTO) {

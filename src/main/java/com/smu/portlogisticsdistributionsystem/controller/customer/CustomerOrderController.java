@@ -5,6 +5,7 @@ import com.smu.portlogisticsdistributionsystem.common.Result;
 import com.smu.portlogisticsdistributionsystem.dto.OrderDTO;
 import com.smu.portlogisticsdistributionsystem.entity.Order;
 import com.smu.portlogisticsdistributionsystem.entity.User;
+import com.smu.portlogisticsdistributionsystem.service.CustomerCacheService;
 import com.smu.portlogisticsdistributionsystem.service.OrderService;
 import com.smu.portlogisticsdistributionsystem.service.UserService;
 import io.swagger.annotations.Api;
@@ -19,15 +20,26 @@ import org.springframework.web.bind.annotation.*;
 public class CustomerOrderController {
     @Autowired
     OrderService orderService;
+
     @Autowired
     UserService userService;
+
+    @Autowired
+    CustomerCacheService customerCacheService;
 
     @GetMapping("/select")
     @ApiOperation("查询我的订单")
     public Result<Page<Order>> select(@RequestParam(defaultValue = "1") int pageNum,
-                                       @RequestParam(defaultValue = "10") int pageSize) {
+                                     @RequestParam(defaultValue = "10") int pageSize) {
         User currentUser = userService.getCurrentUser();
+
+        Page<Order> cachedPage = customerCacheService.getCachedUserOrders(currentUser.getId());
+        if (cachedPage != null) {
+            return Result.success(cachedPage);
+        }
+
         Page<Order> page = orderService.selectByUserId(pageNum, pageSize, currentUser.getId());
+        customerCacheService.cacheUserOrders(currentUser.getId(), page);
         return Result.success(page);
     }
 
@@ -36,6 +48,8 @@ public class CustomerOrderController {
     public Result add(@RequestBody OrderDTO orderDTO) {
         User currentUser = userService.getCurrentUser();
         orderService.addByUser(orderDTO, currentUser.getId());
+        customerCacheService.invalidateUserOrders(currentUser.getId());
+        customerCacheService.invalidateUserLogistics(currentUser.getId());
         return Result.success();
     }
 }

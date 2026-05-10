@@ -17,4 +17,6 @@ public interface UserService extends IService<User> {
     void delete(String ids);
     void update(UserDTO userDTO);
     User getCurrentUser();
+
+    Integer getUserCount();
 }

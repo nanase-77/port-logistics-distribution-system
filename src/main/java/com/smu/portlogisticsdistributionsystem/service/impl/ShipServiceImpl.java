@@ -49,4 +49,9 @@ public class ShipServiceImpl extends ServiceImpl<ShipMapper, Ship> implements Sh
         ship.setUpdateTime(LocalDateTime.now());
         baseMapper.updateById(ship);
     }
+
+    @Override
+    public Integer getShipCount() {
+        return Integer.parseInt(String.valueOf(count()));
+    }
 }

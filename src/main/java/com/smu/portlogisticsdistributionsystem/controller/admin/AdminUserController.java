@@ -46,4 +46,8 @@ public class AdminUserController {
         userService.update(userDTO);
         return Result.success();
     }
+    @GetMapping("/count")
+    public Result<Integer> getUserCount(){
+        return Result.success(userService.getUserCount());
+    }
 }

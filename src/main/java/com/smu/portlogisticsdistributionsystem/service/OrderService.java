@@ -22,4 +22,5 @@ public interface OrderService extends IService<Order> {
 
     void addByUser(OrderDTO orderDTO, Integer userId);
 
+    Integer getOrderCount();
 }

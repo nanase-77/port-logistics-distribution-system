@@ -23,6 +23,13 @@ export const getUserInfo = () => {
   })
 }
 
+export const getUserCount = (params) => {
+  return request({
+    url: '/admin/user/count',
+    method: 'get',
+    params: { pageNum: 1, pageSize: 100, ...params }
+  })
+}
 export const getUsers = (params) => {
   return request({
     url: '/admin/user/select',
@@ -30,7 +37,6 @@ export const getUsers = (params) => {
     params: { pageNum: 1, pageSize: 100, ...params }
   })
 }
-
 export const addUser = (data) => {
   return request({
     url: '/admin/user/add',

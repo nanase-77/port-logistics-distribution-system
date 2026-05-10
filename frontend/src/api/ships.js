@@ -7,6 +7,13 @@ export const getShips = (params) => {
     params: { pageNum: 1, pageSize: 100, ...params }
   })
 }
+export const getShipCount = (params) => {
+  return request({
+    url: '/admin/ship/count',
+    method: 'get',
+    params: { pageNum: 1, pageSize: 100, ...params }
+  })
+}
 
 export const addShip = (data) => {
   return request({

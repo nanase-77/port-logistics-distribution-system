@@ -14,4 +14,6 @@ public interface ShipService extends IService<Ship> {
     void delete(String ids);
 
     void update(ShipDTO shipDTO);
+
+    Integer getShipCount();
 }

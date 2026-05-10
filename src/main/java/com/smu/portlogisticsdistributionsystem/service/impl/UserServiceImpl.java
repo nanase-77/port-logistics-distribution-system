@@ -136,4 +136,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         wrapper.eq(User::getUsername, username);
         return this.getOne(wrapper);
     }
+
+    @Override
+    public Integer getUserCount() {
+        return Integer.parseInt(String.valueOf(count()));
+    }
 }

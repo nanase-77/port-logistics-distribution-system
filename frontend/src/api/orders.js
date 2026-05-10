@@ -7,6 +7,13 @@ export const getOrders = (params) => {
     params: { pageNum: 1, pageSize: 100, ...params }
   })
 }
+export const getOrderCount = (params) => {
+  return request({
+    url: '/admin/order/count',
+    method: 'get',
+    params: { pageNum: 1, pageSize: 100, ...params }
+  })
+}
 
 export const addOrder = (data) => {
   return request({
