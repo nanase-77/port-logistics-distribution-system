@@ -70,11 +70,11 @@
 import { ref, markRaw, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Compass, ArrowRight, Ship, CircleCheck } from '@element-plus/icons-vue'
-import { getLogistics } from '@/api/logistics'
-import { getOrders } from '@/api/orders'
-import { getPorts } from '@/api/ports'
-import { getShips } from '@/api/ships'
-import { getVehicles } from '@/api/vehicles'
+import { getLogistics } from '@/api/customerLogistics'
+import { getOrders } from '@/api/customerOrders'
+import { getPorts } from '@/api/customerPorts'
+import { getShips } from '@/api/customerShips'
+import { getVehicles } from '@/api/customerVehicles'
 
 const searchOrderId = ref('')
 const showDetailModal = ref(false)
@@ -87,7 +87,7 @@ const vehicles = ref([])
 const logisticsList = ref([])
 
 const fetchOrders = async () => {
-  try { const res = await getOrders(); orders.value = res.records || res || [] } catch { /* ignore */ }
+  try { const res = await getOrders(); orders.value = res || [] } catch { /* ignore */ }
 }
 const fetchPorts = async () => {
   try { const res = await getPorts(); ports.value = res.records || res || [] } catch { /* ignore */ }
@@ -101,7 +101,7 @@ const fetchVehicles = async () => {
 const fetchData = async () => {
   try {
     const res = await getLogistics()
-    logisticsList.value = res.records || res || []
+    logisticsList.value = res || []
   } catch {
     ElMessage.error('获取物流列表失败')
   }
@@ -125,13 +125,13 @@ const getOrderNumber = (orderId) => {
 const getPortName = (portId) => {
   if (!portId) return '-'
   const port = ports.value.find(p => p.id === portId)
-  return port ? port.name : `港口${portId}`
+  return port ? port.portName : `港口${portId}`
 }
 
 const getShipName = (shipId) => {
   if (!shipId) return '-'
   const ship = ships.value.find(s => s.id === shipId)
-  return ship ? ship.name : `船舶${shipId}`
+  return ship ? ship.shipName : `船舶${shipId}`
 }
 
 const getCarName = (carId) => {

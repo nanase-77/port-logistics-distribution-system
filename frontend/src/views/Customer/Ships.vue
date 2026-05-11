@@ -21,10 +21,8 @@
       </template>
       <el-table :data="filteredShips" stripe>
         <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column prop="name" label="船舶名称" width="160" />
-        <el-table-column label="所属公司" width="160">
-          <template #default="{ row }">{{ getCompanyName(row.companyId) }}</template>
-        </el-table-column>
+        <el-table-column prop="shipName" label="船舶名称" width="160" />
+        <el-table-column prop="companyName" label="所属公司" width="160" />
         <el-table-column prop="createTime" label="创建时间" width="180" />
       </el-table>
     </el-card>
@@ -34,39 +32,28 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getShips } from '@/api/ships'
-import { getCompanies } from '@/api/companies'
+import { getShips } from '@/api/customerShips'
 
 const searchShipName = ref('')
 
-const companies = ref([])
 const ships = ref([])
 
-const fetchCompanies = async () => {
-  try { const res = await getCompanies(); companies.value = res.records || res || [] } catch { /* ignore */ }
-}
 const fetchData = async () => {
   try { const res = await getShips(); ships.value = res.records || res || [] } catch { /* ignore */ }
 }
 
 onMounted(() => {
-  fetchCompanies()
   fetchData()
 })
 
-const getCompanyName = (companyId) => {
-  const company = companies.value.find(c => c.id === companyId)
-  return company ? company.name : `公司${companyId}`
-}
-
 const filteredShips = computed(() => {
   if (!searchShipName.value) return ships.value
-  return ships.value.filter(item => item.name.includes(searchShipName.value))
+  return ships.value.filter(item => item.shipName?.includes(searchShipName.value))
 })
 
 const handleSearch = () => {
   if (searchShipName.value) {
-    const found = ships.value.find(item => item.name.includes(searchShipName.value))
+    const found = ships.value.find(item => item.shipName?.includes(searchShipName.value))
     if (!found) {
       ElMessage.warning('未找到该船舶')
     }

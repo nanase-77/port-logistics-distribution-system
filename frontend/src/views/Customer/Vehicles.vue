@@ -27,9 +27,7 @@
       <el-table :data="filteredVehicles" stripe>
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column prop="carName" label="拖车编号" width="140" />
-        <el-table-column label="所在港口" width="140">
-          <template #default="{ row }">{{ getPortName(row.portId) }}</template>
-        </el-table-column>
+        <el-table-column prop="portName" label="所在港口" width="140" />
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="row.status === '闲置' ? 'success' : 'primary'">{{ row.status }}</el-tag>
@@ -44,31 +42,20 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getVehicles } from '@/api/vehicles'
-import { getPorts } from '@/api/ports'
+import { getVehicles } from '@/api/customerVehicles'
 
 const statusFilter = ref('')
 const searchCarName = ref('')
 
-const ports = ref([])
 const vehicles = ref([])
 
-const fetchPorts = async () => {
-  try { const res = await getPorts(); ports.value = res.records || res || [] } catch { /* ignore */ }
-}
 const fetchData = async () => {
   try { const res = await getVehicles(); vehicles.value = res.records || res || [] } catch { /* ignore */ }
 }
 
 onMounted(() => {
-  fetchPorts()
   fetchData()
 })
-
-const getPortName = (portId) => {
-  const port = ports.value.find(p => p.id === portId)
-  return port ? port.name : `港口${portId}`
-}
 
 const filteredVehicles = computed(() => {
   let result = vehicles.value

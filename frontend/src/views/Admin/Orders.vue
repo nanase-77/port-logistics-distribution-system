@@ -30,42 +30,36 @@
       </template>
       <el-table :data="filteredOrders" stripe>
         <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column prop="orderNumber" label="订单号" width="160" />
-        <el-table-column label="用户" width="120">
+        <el-table-column prop="orderNumber" label="订单号" />
+        <el-table-column label="客户" width="100">
           <template #default="{ row }">{{ getUsername(row.userId) }}</template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)">{{ row.status }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="关联集装箱" width="200">
-          <template #default="{ row }">{{ getContainerContents(row.containerIds) }}</template>
-        </el-table-column>
+        <el-table-column prop="containerIds" label="集装箱" width="120"/>
+        <el-table-column prop="status" label="状态" width="100" />
         <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" min-width="280">
+        <el-table-column label="操作" width="180">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="openEditModal(row)">编辑</el-button>
-            <el-button v-if="row.status === '待处理'" type="success" size="small" @click="handleAudit(row)">审核通过</el-button>
-            <el-button v-if="row.status === '进行中'" type="warning" size="small" @click="handleComplete(row)">标记完成</el-button>
-            <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <el-button type="danger" size="small" @click="handleDelete(row.id)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
     </el-card>
 
-    <el-dialog v-model="showModal" :title="isEdit ? '编辑订单' : '新增订单'" width="600px">
+    <el-dialog v-model="showModal" :title="isEdit ? '修改订单' : '新增订单'" width="500px">
       <el-form :model="form" label-width="100px">
         <el-form-item label="订单号">
-          <el-input v-model="form.orderNumber" :disabled="isEdit" placeholder="请输入订单号" />
+          <el-input v-model="form.orderNumber" />
         </el-form-item>
-        <el-form-item label="用户">
+        <el-form-item label="客户">
           <el-select v-model="form.userId" style="width: 100%;">
             <el-option v-for="user in users" :key="user.id" :label="user.username" :value="user.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="关联集装箱">
-          <el-input v-model="form.containerIds" placeholder="请输入集装箱ID，多个用逗号分隔" />
+        <el-form-item label="集装箱">
+          <el-select v-model="form.containerId" style="width: 100%;">
+            <el-option v-for="container in containers" :key="container.id" :label="container.containerNumber" :value="container.id" />
+          </el-select>
         </el-form-item>
         <el-form-item label="订单状态">
           <el-select v-model="form.status" style="width: 100%;">
@@ -86,9 +80,9 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getOrders, addOrder, updateOrder, deleteOrder } from '@/api/orders'
-import { getUsers } from '@/api/user'
-import { getContainers } from '@/api/containers'
+import { getOrders, addOrder, updateOrder, deleteOrder } from '@/api/adminOrders'
+import { getUsers } from '@/api/adminUsers'
+import { getContainers } from '@/api/adminContainers'
 
 const showModal = ref(false)
 const isEdit = ref(false)
@@ -98,6 +92,14 @@ const searchOrderNumber = ref('')
 const users = ref([])
 const containers = ref([])
 const orders = ref([])
+
+const form = reactive({
+  id: null,
+  orderNumber: '',
+  userId: null,
+  containerId: null,
+  status: '待处理'
+})
 
 const fetchUsers = async () => {
   try {
@@ -133,14 +135,9 @@ const getUsername = (userId) => {
   return user ? user.username : '未知用户'
 }
 
-const getContainerContents = (containerIds) => {
-  if (!containerIds) return ''
-  const ids = containerIds.split(',').map(id => parseInt(id))
-  const contents = ids.map(id => {
-    const container = containers.value.find(c => c.id === id)
-    return container ? container.content : `集装箱${id}`
-  })
-  return contents.join(', ')
+const getContainerNumber = (containerId) => {
+  const container = containers.value.find(c => c.id === containerId)
+  return container ? container.containerNumber : '未知集装箱'
 }
 
 const filteredOrders = computed(() => {
@@ -149,48 +146,18 @@ const filteredOrders = computed(() => {
     result = result.filter(item => item.status === statusFilter.value)
   }
   if (searchOrderNumber.value) {
-    result = result.filter(item => item.orderNumber.includes(searchOrderNumber.value))
+    result = result.filter(item => item.orderNumber?.includes(searchOrderNumber.value))
   }
   return result
 })
 
-const handleSearch = () => {
-  if (searchOrderNumber.value) {
-    const found = orders.value.find(item => item.orderNumber.includes(searchOrderNumber.value))
-    if (!found) {
-      ElMessage.warning('未找到该订单')
-    }
-  }
-}
-
-const form = reactive({
-  id: null,
-  orderNumber: '',
-  userId: 1,
-  containerIds: '',
-  status: '待处理'
-})
-
-const getStatusType = (status) => {
-  const statusMap = {
-    '待处理': 'warning',
-    '进行中': 'primary',
-    '已完成': 'success'
-  }
-  return statusMap[status] || 'info'
-}
-
-const resetForm = () => {
-  form.id = null
-  form.orderNumber = ''
-  form.userId = 1
-  form.containerIds = ''
-  form.status = '待处理'
-}
-
 const openAddModal = () => {
   isEdit.value = false
-  resetForm()
+  form.id = null
+  form.orderNumber = ''
+  form.userId = null
+  form.containerId = null
+  form.status = '待处理'
   showModal.value = true
 }
 
@@ -199,23 +166,19 @@ const openEditModal = (row) => {
   form.id = row.id
   form.orderNumber = row.orderNumber
   form.userId = row.userId
-  form.containerIds = row.containerIds
+  form.containerId = row.containerId
   form.status = row.status
   showModal.value = true
 }
 
 const handleSave = async () => {
-  if (!form.orderNumber) {
-    ElMessage.warning('请输入订单号')
-    return
-  }
   try {
     if (isEdit.value) {
-      await updateOrder({ id: form.id, orderNumber: form.orderNumber, userId: form.userId, containerIds: form.containerIds, status: form.status })
-      ElMessage.success('订单信息已更新')
+      await updateOrder(form)
+      ElMessage.success('修改成功')
     } else {
-      await addOrder({ orderNumber: form.orderNumber, userId: form.userId, containerIds: form.containerIds, status: form.status })
-      ElMessage.success('订单已创建')
+      await addOrder(form)
+      ElMessage.success('添加成功')
     }
     showModal.value = false
     fetchData()
@@ -224,40 +187,28 @@ const handleSave = async () => {
   }
 }
 
-const handleAudit = async (row) => {
+const handleDelete = async (id) => {
   try {
-    await updateOrder({ id: row.id, status: '进行中' })
-    ElMessage.success(`订单 ${row.orderNumber} 已审核通过`)
+    await ElMessageBox.confirm('确定删除该订单吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    await deleteOrder(id)
+    ElMessage.success('删除成功')
     fetchData()
   } catch {
-    ElMessage.error('操作失败')
+    ElMessage.info('已取消删除')
   }
 }
 
-const handleComplete = async (row) => {
-  try {
-    await updateOrder({ id: row.id, status: '已完成' })
-    ElMessage.success(`订单 ${row.orderNumber} 已标记完成`)
-    fetchData()
-  } catch {
-    ElMessage.error('操作失败')
-  }
-}
-
-const handleDelete = (row) => {
-  ElMessageBox.confirm(`确定要删除订单 "${row.orderNumber}" 吗？`, '确认删除', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(async () => {
-    try {
-      await deleteOrder(row.id)
-      ElMessage.success('订单已删除')
-      fetchData()
-    } catch {
-      ElMessage.error('删除失败')
+const handleSearch = () => {
+  if (searchOrderNumber.value) {
+    const found = orders.value.find(item => item.orderNumber?.includes(searchOrderNumber.value))
+    if (!found) {
+      ElMessage.warning('未找到该订单')
     }
-  }).catch(() => {})
+  }
 }
 </script>
 
@@ -267,17 +218,15 @@ const handleDelete = (row) => {
 }
 
 .table-card {
-  margin-bottom: 20px;
-}
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
+  .header-actions {
+    display: flex;
+    align-items: center;
+  }
 }
 </style>

@@ -61,17 +61,15 @@
         </div>
       </template>
       <el-table :data="filteredContainers" stripe>
-        <el-table-column prop="containerNumber" label="集装箱编号" />
-        <el-table-column prop="type" label="类型" />
+        <el-table-column prop="id" label="集装箱编号" />
+        <el-table-column prop="content" label="内容" />
         <el-table-column prop="size" label="尺寸" />
-        <el-table-column prop="weight" label="载重(吨)" />
-        <el-table-column prop="currentPort" label="当前位置" />
-        <el-table-column prop="status" label="状态">
+        <el-table-column prop="companyName" label="所属公司" />
+        <el-table-column label="状态">
           <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)">{{ row.status }}</el-tag>
+            <el-tag :type="getStatusType(getStateText(row.state))">{{ getStateText(row.state) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="orderNumber" label="关联订单" />
         <el-table-column label="操作">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="handleViewDetail(row)">详情</el-button>
@@ -85,7 +83,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getContainers } from '@/api/containers'
+import { getContainers } from '@/api/customerContainers'
 
 const statusFilter = ref('')
 const searchContainerNumber = ref('')
@@ -93,40 +91,55 @@ const searchContainerNumber = ref('')
 const containers = ref([])
 
 const fetchData = async () => {
-  try { const res = await getContainers(); containers.value = res.records || res || [] } catch { /* ignore */ }
+  try { 
+    const res = await getContainers(); 
+    containers.value = res.records || res || [] 
+  } catch (e) { 
+    console.error('Failed to fetch containers:', e)
+  }
 }
 
 onMounted(() => {
   fetchData()
 })
 
+const getStateText = (state) => {
+  const stateMap = {
+    0: '空闲',
+    1: '使用中',
+    2: '运输中'
+  }
+  return stateMap[state] || '未知'
+}
+
 const filteredContainers = computed(() => {
   let result = containers.value
   if (statusFilter.value) {
-    result = result.filter(item => item.status === statusFilter.value)
+    result = result.filter(item => getStateText(item.state) === statusFilter.value)
   }
   if (searchContainerNumber.value) {
-    result = result.filter(item => item.containerNumber.includes(searchContainerNumber.value))
+    result = result.filter(item => String(item.id).includes(searchContainerNumber.value))
   }
   return result
 })
 
-const occupiedCount = computed(() => containers.value.filter(c => c.status === '使用中').length)
-const emptyCount = computed(() => containers.value.filter(c => c.status === '空闲').length)
-const transitCount = computed(() => containers.value.filter(c => c.status === '运输中').length)
+const occupiedCount = computed(() => containers.value.filter(c => c.state === 1).length)
+const emptyCount = computed(() => containers.value.filter(c => c.state === 0).length)
+const transitCount = computed(() => containers.value.filter(c => c.state === 2).length)
 
 const getStatusType = (status) => {
   const statusMap = {
     '空闲': 'success',
     '使用中': 'primary',
-    '运输中': 'warning'
+    '运输中': 'warning',
+    '未知': 'info'
   }
   return statusMap[status] || 'info'
 }
 
 const handleSearch = () => {
   if (searchContainerNumber.value) {
-    const found = containers.value.find(item => item.containerNumber.includes(searchContainerNumber.value))
+    const found = containers.value.find(item => String(item.id).includes(searchContainerNumber.value))
     if (!found) {
       ElMessage.warning('未找到该集装箱')
     }
@@ -134,7 +147,7 @@ const handleSearch = () => {
 }
 
 const handleViewDetail = (row) => {
-  ElMessage.info(`查看集装箱详情: ${row.containerNumber}`)
+  ElMessage.info(`查看集装箱详情: ${row.id}`)
 }
 </script>
 

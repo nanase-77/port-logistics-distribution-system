@@ -5,10 +5,15 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.smu.portlogisticsdistributionsystem.dto.LogisticDTO;
 import com.smu.portlogisticsdistributionsystem.dto.LogisticQueryDTO;
+import com.smu.portlogisticsdistributionsystem.dto.UserLoginDTO;
 import com.smu.portlogisticsdistributionsystem.entity.Logistic;
+import com.smu.portlogisticsdistributionsystem.entity.Order;
 import com.smu.portlogisticsdistributionsystem.mapper.LogisticMapper;
+import com.smu.portlogisticsdistributionsystem.mapper.OrderMapper;
 import com.smu.portlogisticsdistributionsystem.service.LogisticService;
 import com.smu.portlogisticsdistributionsystem.service.PortGraphService;
+import com.smu.portlogisticsdistributionsystem.service.RedisLogisticService;
+import com.smu.portlogisticsdistributionsystem.util.UserHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -25,6 +30,9 @@ import java.util.List;
 public class LogisticServiceImpl extends ServiceImpl<LogisticMapper, Logistic> implements LogisticService {
 
     private final PortGraphService portGraphService;
+    private final RedisLogisticService redisLogisticService;
+    private final OrderMapper orderMapper;
+
     @Override
     public Page<Logistic> select(int pageNum, int pageSize, LogisticQueryDTO logisticQueryDTO) {
         Page<Logistic> p = new Page<>(pageNum, pageSize);
@@ -36,7 +44,7 @@ public class LogisticServiceImpl extends ServiceImpl<LogisticMapper, Logistic> i
             Integer currentPortId = logisticQueryDTO.getCurrentPortId();
             Integer shipId = logisticQueryDTO.getShipId();
             Integer carId = logisticQueryDTO.getCarId();
-            
+
             if (orderId != null) {
                 q.eq("order_id", orderId);
             }
@@ -67,9 +75,10 @@ public class LogisticServiceImpl extends ServiceImpl<LogisticMapper, Logistic> i
         logistic.setCreateTime(LocalDateTime.now());
         logistic.setUpdateTime(LocalDateTime.now());
         baseMapper.insert(logistic);
-        
+
         portGraphService.addLogisticToGraph(logistic);
-        log.info("Logistic {} added to MySQL and Neo4j", logistic.getId());
+        redisLogisticService.clearAllLogistics();
+        log.info("Logistic {} added to MySQL and Neo4j, Redis cache cleared", logistic.getId());
     }
 
     @Override
@@ -78,15 +87,14 @@ public class LogisticServiceImpl extends ServiceImpl<LogisticMapper, Logistic> i
         String[] idArray = ids.split(",");
         List<Integer> idList = new ArrayList<>();
         for (String id : idArray) {
-            idList.add(Integer.valueOf(id));
-        }
-        
-        for (Integer logisticId : idList) {
+            Integer logisticId = Integer.valueOf(id);
+            idList.add(logisticId);
             portGraphService.removeLogisticFromGraph(logisticId.longValue());
         }
-        
+
         baseMapper.deleteBatchIds(idList);
-        log.info("Logistics {} deleted from MySQL and Neo4j", ids);
+        redisLogisticService.clearAllLogistics();
+        log.info("Logistics {} deleted from MySQL and Neo4j, Redis cache cleared", ids);
     }
 
     @Override
@@ -96,8 +104,60 @@ public class LogisticServiceImpl extends ServiceImpl<LogisticMapper, Logistic> i
         BeanUtils.copyProperties(logisticDTO, logistic);
         logistic.setUpdateTime(LocalDateTime.now());
         baseMapper.updateById(logistic);
-        
+
         portGraphService.updateLogisticInGraph(logistic);
-        log.info("Logistic {} updated in MySQL and Neo4j", logistic.getId());
+        redisLogisticService.clearAllLogistics();
+        log.info("Logistic {} updated in MySQL and Neo4j, Redis cache cleared", logistic.getId());
+    }
+
+    public List<Logistic> selectFromCacheOrDb() {
+        try {
+            UserLoginDTO currentUser = UserHolder.getUser();
+            Integer userId = currentUser != null ? currentUser.getId() : null;
+            
+            List<Integer> userOrderIds;
+            if (userId != null) {
+                QueryWrapper<Order> orderQuery = new QueryWrapper<>();
+                orderQuery.eq("user_id", userId);
+                List<Order> userOrders = orderMapper.selectList(orderQuery);
+                userOrderIds = userOrders.stream()
+                        .map(Order::getId)
+                        .toList();
+                log.info("User {} has {} orders", userId, userOrderIds.size());
+            } else {
+                userOrderIds = new ArrayList<>();
+            }
+
+            List<Logistic> cachedLogistics = redisLogisticService.getAllLogistics();
+            log.info("Redis cached logistics count: {}", cachedLogistics.size());
+            
+            List<Logistic> userLogistics;
+            if (!cachedLogistics.isEmpty()) {
+                if (userId != null && !userOrderIds.isEmpty()) {
+                    userLogistics = cachedLogistics.stream()
+                            .filter(logistic -> userOrderIds.contains(logistic.getOrderId()))
+                            .toList();
+                    log.info("Filtered user {} logistics from Redis: {}", userId, userLogistics.size());
+                } else {
+                    userLogistics = cachedLogistics;
+                }
+            } else {
+                log.info("No logistics in Redis cache, fetching from MySQL");
+                QueryWrapper<Logistic> q = new QueryWrapper<>();
+                if (userId != null && !userOrderIds.isEmpty()) {
+                    q.in("order_id", userOrderIds);
+                }
+                userLogistics = baseMapper.selectList(q);
+                log.info("MySQL logistics count for user {}: {}", userId, userLogistics.size());
+                
+                for (Logistic logistic : userLogistics) {
+                    redisLogisticService.addLogistic(logistic);
+                }
+            }
+            return userLogistics;
+        } catch (Exception e) {
+            log.error("Error in selectFromCacheOrDb: ", e);
+            throw e;
+        }
     }
 }

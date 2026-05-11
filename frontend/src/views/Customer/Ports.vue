@@ -21,7 +21,7 @@
       </template>
       <el-table :data="filteredPorts" stripe>
         <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column prop="name" label="港口名称" width="140" />
+        <el-table-column prop="portName" label="港口名称" width="140" />
         <el-table-column prop="longitude" label="经度" width="120" />
         <el-table-column prop="latitude" label="纬度" width="120" />
         <el-table-column prop="country" label="所在国家" width="120" />

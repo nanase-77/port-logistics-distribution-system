@@ -1,8 +1,10 @@
 package com.smu.portlogisticsdistributionsystem.service.impl;
 
+
+
+import com.smu.portlogisticsdistributionsystem.dto.*;
 import com.smu.portlogisticsdistributionsystem.dto.AlternativeRoute;
 import com.smu.portlogisticsdistributionsystem.dto.OptimizationSuggestion;
-import com.smu.portlogisticsdistributionsystem.dto.RouteCost;
 import com.smu.portlogisticsdistributionsystem.dto.ScheduleResult;
 import com.smu.portlogisticsdistributionsystem.dto.SchedulingRequest;
 import com.smu.portlogisticsdistributionsystem.entity.Car;
@@ -140,7 +142,7 @@ public class SchedulingServiceImpl implements SchedulingService {
             Port toPort = portMapper.selectById(request.getToPortId());
             if (toPort != null) {
                 List<Car> availableCars = carMapper.selectList(null).stream()
-                        .filter(c -> "在用".equals(c.getStatus()) && 
+                        .filter(c -> "在用".equals(c.getStatus()) &&
                                 c.getPortId() != null && c.getPortId().equals(toPort.getId()))
                         .collect(Collectors.toList());
                 if (!availableCars.isEmpty()) {
@@ -277,7 +279,7 @@ public class SchedulingServiceImpl implements SchedulingService {
     public Map<String, Object> getGraphData() {
         log.info("Fetching graph data for visualization");
         Map<String, Object> result = new HashMap<>();
-        
+
         List<Map<String, Object>> nodes = new ArrayList<>();
         List<Map<String, Object>> edges = new ArrayList<>();
 
@@ -287,7 +289,7 @@ public class SchedulingServiceImpl implements SchedulingService {
         int cols = 4;
         int padding = 80;
         int nodeWidth = 150;
-        
+
         for (int i = 0; i < ports.size(); i++) {
             Port port = ports.get(i);
             Map<String, Object> node = new HashMap<>();
@@ -308,7 +310,7 @@ public class SchedulingServiceImpl implements SchedulingService {
                 Port p2 = ports.get(j);
                 double distance = geoService.calculateDistance(p1.getLatitude(), p1.getLongitude(),
                         p2.getLatitude(), p2.getLongitude());
-                
+
                 Map<String, Object> edge = new HashMap<>();
                 edge.put("from", p1.getId());
                 edge.put("fromName", p1.getPortName());

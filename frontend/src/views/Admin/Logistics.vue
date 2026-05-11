@@ -117,11 +117,11 @@
 import { ref, reactive, computed, markRaw, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { CircleCheck, ArrowRight, Compass, Ship } from '@element-plus/icons-vue'
-import { getLogistics, addLogistics, updateLogistics, deleteLogistics } from '@/api/logistics'
-import { getOrders } from '@/api/orders'
-import { getPorts } from '@/api/ports'
-import { getShips } from '@/api/ships'
-import { getVehicles } from '@/api/vehicles'
+import { getLogistics, addLogistics, updateLogistics, deleteLogistics } from '@/api/adminLogistics'
+import { getOrders } from '@/api/adminOrders'
+import { getPorts } from '@/api/adminPorts'
+import { getShips } from '@/api/adminShips'
+import { getVehicles } from '@/api/adminVehicles'
 
 const showModal = ref(false)
 const isEdit = ref(false)

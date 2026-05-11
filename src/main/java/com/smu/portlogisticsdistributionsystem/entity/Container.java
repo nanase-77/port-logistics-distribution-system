@@ -21,4 +21,6 @@ public class Container {
     private LocalDateTime updateTime;
     @TableField("create_time")
     private LocalDateTime createTime;
+    @TableField("state")
+    private int state;
 }

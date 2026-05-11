@@ -28,19 +28,10 @@
       <el-table :data="filteredOrders" stripe>
         <el-table-column prop="orderNumber" label="订单号" />
         <el-table-column prop="createTime" label="创建时间" />
-        <el-table-column prop="status" label="状态">
+        <el-table-column prop="status" label="状态" />
+        <el-table-column label="操作" width="120">
           <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)">{{ row.status }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="startPort" label="起始港口" />
-        <el-table-column prop="endPort" label="目的港口" />
-        <el-table-column prop="cargoType" label="货物类型" />
-        <el-table-column prop="weight" label="重量(吨)" />
-        <el-table-column label="操作" width="180">
-          <template #default="{ row }">
-            <el-button type="primary" size="small" @click="handleViewDetail(row)">查看详情</el-button>
-            <el-button type="success" size="small" v-if="row.status === '待处理'" @click="handleConfirm(row)">确认订单</el-button>
+            <el-button type="primary" size="small">查看详情</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -51,7 +42,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getOrders, updateOrder } from '@/api/orders'
+import { getOrders } from '@/api/customerOrders'
 
 const statusFilter = ref('')
 const searchOrderNumber = ref('')
@@ -59,10 +50,13 @@ const searchOrderNumber = ref('')
 const orders = ref([])
 
 const fetchData = async () => {
+  let res
   try {
-    const res = await getOrders()
-    orders.value = res.records || res || []
+    res = await getOrders()
+
+    orders.value = res || []
   } catch {
+    console.log(res)
     ElMessage.error('获取订单列表失败')
   }
 }
@@ -77,40 +71,17 @@ const filteredOrders = computed(() => {
     result = result.filter(item => item.status === statusFilter.value)
   }
   if (searchOrderNumber.value) {
-    result = result.filter(item => item.orderNumber.includes(searchOrderNumber.value))
+    result = result.filter(item => item.orderNumber?.includes(searchOrderNumber.value))
   }
   return result
 })
 
-const getStatusType = (status) => {
-  const statusMap = {
-    '待处理': 'warning',
-    '进行中': 'primary',
-    '已完成': 'success'
-  }
-  return statusMap[status] || 'info'
-}
-
 const handleSearch = () => {
   if (searchOrderNumber.value) {
-    const found = orders.value.find(item => item.orderNumber.includes(searchOrderNumber.value))
+    const found = orders.value.find(item => item.orderNumber?.includes(searchOrderNumber.value))
     if (!found) {
       ElMessage.warning('未找到该订单')
     }
-  }
-}
-
-const handleViewDetail = (row) => {
-  ElMessage.info(`查看订单详情: ${row.orderNumber}`)
-}
-
-const handleConfirm = async (row) => {
-  try {
-    await updateOrder({ id: row.id, status: '进行中' })
-    ElMessage.success('订单已确认')
-    fetchData()
-  } catch {
-    ElMessage.error('操作失败')
   }
 }
 </script>
@@ -121,12 +92,10 @@ const handleConfirm = async (row) => {
 }
 
 .orders-card {
-  margin-bottom: 20px;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
 }
 </style>

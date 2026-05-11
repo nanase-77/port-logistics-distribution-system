@@ -25,9 +25,7 @@
       <el-table :data="filteredShips" stripe style="width: 100%;">
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column prop="shipName" label="船舶名称" width="160" />
-        <el-table-column label="所属公司" width="160">
-          <template #default="{ row }">{{ getCompanyName(row.companyId) }}</template>
-        </el-table-column>
+        <el-table-column prop="companyName" label="所属公司" width="160" />
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" width="200">
           <template #default="{ row }">
@@ -60,8 +58,8 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getShips, addShip, updateShip, deleteShip } from '@/api/ships'
-import { getCompanies } from '@/api/companies'
+import { getShips, addShip, updateShip, deleteShip } from '@/api/adminShips'
+import { getCompanies } from '@/api/adminCompanies'
 
 const showModal = ref(false)
 const isEdit = ref(false)
@@ -90,11 +88,6 @@ onMounted(() => {
   fetchCompanies()
   fetchData()
 })
-
-const getCompanyName = (companyId) => {
-  const company = companies.value.find(c => c.id === companyId)
-  return company ? company.name : `公司${companyId}`
-}
 
 const filteredShips = computed(() => {
   if (!searchShipName.value) return ships.value
@@ -157,7 +150,7 @@ const handleSave = async () => {
 }
 
 const handleDelete = (row) => {
-  ElMessageBox.confirm(`确定要删除船舶 "${row.name}" 吗？`, '确认删除', {
+  ElMessageBox.confirm(`确定要删除船舶 "${row.shipName}" 吗？`, '确认删除', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'

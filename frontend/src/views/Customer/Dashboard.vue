@@ -7,7 +7,7 @@
             <el-icon size="30"><Clock /></el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value">5</div>
+            <div class="stat-value">{{ stats.pendingCount || 0 }}</div>
             <div class="stat-label">待处理订单</div>
           </div>
         </el-card>
@@ -18,7 +18,7 @@
             <el-icon size="30"><Loading /></el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value">8</div>
+            <div class="stat-value">{{ stats.progressCount || 0 }}</div>
             <div class="stat-label">进行中订单</div>
           </div>
         </el-card>
@@ -29,7 +29,7 @@
             <el-icon size="30"><SuccessFilled /></el-icon>
           </div>
           <div class="stat-content">
-            <div class="stat-value">23</div>
+            <div class="stat-value">{{ stats.completedCount || 0 }}</div>
             <div class="stat-label">已完成订单</div>
           </div>
         </el-card>
@@ -48,8 +48,7 @@
             <el-tag :type="getStatusType(row.status)">{{ row.status }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="startPort" label="起始港口" />
-        <el-table-column prop="endPort" label="目的港口" />
+
       </el-table>
     </el-card>
   </div>
@@ -58,14 +57,20 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { Clock, Loading, SuccessFilled } from '@element-plus/icons-vue'
-import { getOrders } from '@/api/orders'
+import { getOrders, getOrderStats } from '@/api/customerOrders'
 
 const recentOrders = ref([])
+const stats = ref({
+  pendingCount: 0,
+  progressCount: 0,
+  completedCount: 0
+})
 
 const fetchData = async () => {
   try {
-    const res = await getOrders()
-    recentOrders.value = (res.records || res || []).slice(0, 5)
+    const [ordersRes, statsRes] = await Promise.all([getOrders(), getOrderStats()])
+    recentOrders.value = (ordersRes.records || ordersRes || []).slice(0, 5)
+    stats.value = statsRes || { pendingCount: 0, progressCount: 0, completedCount: 0 }
   } catch { /* ignore */ }
 }
 

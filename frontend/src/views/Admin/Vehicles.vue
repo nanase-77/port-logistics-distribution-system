@@ -49,7 +49,7 @@
           <el-input v-model="form.carName" placeholder="请输入拖车编号" />
         </el-form-item>
         <el-form-item label="所在港口">
-          <el-select v-model="form.portId" style="width: 100%;">
+          <el-select v-model="form.portName" style="width: 100%;">
             <el-option v-for="port in ports" :key="port.id" :label="port.name" :value="port.id" />
           </el-select>
         </el-form-item>

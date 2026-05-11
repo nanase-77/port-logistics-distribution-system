@@ -4,28 +4,37 @@
       <template #header>
         <div class="report-header">
           <span>数据统计报表</span>
-          <el-button type="primary" size="small" @click="exportReport">导出报表</el-button>
+          <el-button type="primary" size="small" @click="handleExportReport" :loading="exportLoading">
+            <el-icon><Download /></el-icon>
+            导出报表
+          </el-button>
         </div>
       </template>
-      
+
       <el-row :gutter="20">
-        <el-col :span="8">
+        <el-col :span="6">
           <div class="stat-item">
-          <div class="stat-value">{{ reportStats.throughput }}</div>
-          <div class="stat-label">本月吞吐量(TEU)</div>
-        </div>
+            <div class="stat-value">{{ reportStats.orderCount }}</div>
+            <div class="stat-label">订单总数</div>
+          </div>
         </el-col>
-        <el-col :span="8">
+        <el-col :span="6">
           <div class="stat-item">
-          <div class="stat-value">{{ reportStats.completionRate }}%</div>
-          <div class="stat-label">订单完成率</div>
-        </div>
+            <div class="stat-value">{{ reportStats.containerCount }}</div>
+            <div class="stat-label">集装箱数量</div>
+          </div>
         </el-col>
-        <el-col :span="8">
+        <el-col :span="6">
           <div class="stat-item">
-          <div class="stat-value">{{ reportStats.utilizationRate }}%</div>
-          <div class="stat-label">设备利用率</div>
-        </div>
+            <div class="stat-value">{{ reportStats.carCount }}</div>
+            <div class="stat-label">车辆数量</div>
+          </div>
+        </el-col>
+        <el-col :span="6">
+          <div class="stat-item">
+            <div class="stat-value">{{ reportStats.logisticCount }}</div>
+            <div class="stat-label">物流跟踪数</div>
+          </div>
         </el-col>
       </el-row>
 
@@ -62,6 +71,27 @@
           </el-card>
         </el-col>
       </el-row>
+
+      <el-row :gutter="20" style="margin-top: 20px;">
+        <el-col :span="12">
+          <el-card title="港口周转量">
+            <el-table :data="portTurnover" stripe size="small">
+              <el-table-column prop="portName" label="港口名称" />
+              <el-table-column prop="turnover" label="周转量(TEU)" />
+            </el-table>
+          </el-card>
+        </el-col>
+        <el-col :span="12">
+          <el-card title="设备使用状态">
+            <el-table :data="equipmentUsage" stripe size="small">
+              <el-table-column prop="total" label="设备总数" />
+              <el-table-column prop="working" label="运行中" />
+              <el-table-column prop="idle" label="空闲" />
+              <el-table-column prop="maintenance" label="维护中" />
+            </el-table>
+          </el-card>
+        </el-col>
+      </el-row>
     </el-card>
   </div>
 </template>
@@ -69,14 +99,19 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getReportData, getMonthlyThroughput, getOrderStatistics } from '@/api/report'
+import { Download } from '@element-plus/icons-vue'
+import request from '@/utils/request'
 
 const monthlyData = ref([])
+const portTurnover = ref([])
+const equipmentUsage = ref([])
+const exportLoading = ref(false)
 
 const reportStats = reactive({
-  throughput: '0',
-  completionRate: '0',
-  utilizationRate: '0'
+  orderCount: '0',
+  containerCount: '0',
+  carCount: '0',
+  logisticCount: '0'
 })
 
 const orderStats = reactive({
@@ -88,33 +123,48 @@ const orderStats = reactive({
 
 const fetchData = async () => {
   try {
-    const [monthlyRes, reportRes, orderRes] = await Promise.all([
-      getMonthlyThroughput(),
-      getReportData(),
-      getOrderStatistics()
+    const [monthlyRes, reportRes, orderRes, portRes, equipmentRes] = await Promise.all([
+      request({ url: '/reports/monthly-throughput', method: 'get' }),
+      request({ url: '/reports', method: 'get' }),
+      request({ url: '/reports/order-statistics', method: 'get' }),
+      request({ url: '/reports/port-turnover', method: 'get' }),
+      request({ url: '/reports/equipment-usage', method: 'get' })
     ])
     
-    monthlyData.value = monthlyRes.records || monthlyRes || []
+    monthlyData.value = monthlyRes.data || monthlyRes || []
+    portTurnover.value = portRes.data || portRes || []
+    equipmentUsage.value = equipmentRes.data || equipmentRes || []
     
-    const reportData = reportRes || {}
-    reportStats.throughput = reportData.throughput || '0'
-    reportStats.completionRate = reportData.completionRate || '0'
-    reportStats.utilizationRate = reportData.utilizationRate || '0'
+    const reportData = reportRes.data || reportRes || {}
+    reportStats.orderCount = reportData.orderCount || '0'
+    reportStats.containerCount = reportData.containerCount || '0'
+    reportStats.carCount = reportData.carCount || '0'
+    reportStats.logisticCount = reportData.logisticCount || '0'
     
-    const orderData = orderRes || {}
+    const orderData = orderRes.data || orderRes || {}
     orderStats.completedRate = orderData.completedRate || 0
     orderStats.completedCount = orderData.completedCount || 0
     orderStats.processingRate = orderData.processingRate || 0
     orderStats.processingCount = orderData.processingCount || 0
-  } catch { /* ignore */ }
+  } catch (error) {
+    console.error('获取报表数据失败:', error)
+  }
 }
 
 onMounted(() => {
   fetchData()
 })
 
-const exportReport = () => {
-  ElMessage.success('报表导出成功')
+const handleExportReport = async () => {
+  exportLoading.value = true
+  try {
+    const res = await request({ url: '/reports/export', method: 'get' })
+    ElMessage.success(res.msg || res.data || '报表导出成功')
+  } catch (error) {
+    ElMessage.error('导出失败: ' + (error.message || '未知错误'))
+  } finally {
+    exportLoading.value = false
+  }
 }
 </script>
 

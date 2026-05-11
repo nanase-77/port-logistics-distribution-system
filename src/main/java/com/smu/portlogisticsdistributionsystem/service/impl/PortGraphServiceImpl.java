@@ -540,7 +540,7 @@ public class PortGraphServiceImpl implements PortGraphService {
                 Record record = logisticResult.next();
                 
                 Map<String, Object> logisticInfo = new HashMap<>();
-                if (record.get("l").isNotNull()) {
+                if (!record.get("l").isEmpty()) {
                     Node l = record.get("l").asNode();
                     logisticInfo.put("id", l.get("id").asLong());
                     logisticInfo.put("orderId", l.get("orderId").asInt());
@@ -551,7 +551,7 @@ public class PortGraphServiceImpl implements PortGraphService {
                     logisticInfo.put("carId", l.get("carId").asInt());
                 }
                 
-                if (record.get("start").isNotNull()) {
+                if (!record.get("l").isEmpty()) {
                     Node start = record.get("start").asNode();
                     Map<String, Object> startPort = new HashMap<>();
                     startPort.put("id", start.get("id").asLong());
@@ -560,7 +560,7 @@ public class PortGraphServiceImpl implements PortGraphService {
                     result.put("startPort", startPort);
                 }
                 
-                if (record.get("end").isNotNull()) {
+                if (!record.get("l").isEmpty()) {
                     Node end = record.get("end").asNode();
                     Map<String, Object> endPort = new HashMap<>();
                     endPort.put("id", end.get("id").asLong());
@@ -569,7 +569,7 @@ public class PortGraphServiceImpl implements PortGraphService {
                     result.put("endPort", endPort);
                 }
                 
-                if (record.get("current").isNotNull()) {
+                if (!record.get("l").isEmpty()) {
                     Node current = record.get("current").asNode();
                     Map<String, Object> currentPort = new HashMap<>();
                     currentPort.put("id", current.get("id").asLong());
