@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 public class SchedulingRequest {
 
     /**
-     * 货物名称
+     * 货物名称/描述
      */
     private String cargoName;
 
@@ -23,6 +23,16 @@ public class SchedulingRequest {
      * 货物重量（吨）
      */
     private Double weight;
+
+    /**
+     * 货物体积（立方米）
+     */
+    private Double volume;
+
+    /**
+     * TEU数量（标准箱）
+     */
+    private Integer teu;
 
     /**
      * 起始港口ID

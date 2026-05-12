@@ -186,13 +186,11 @@ public class ReportController {
                 }
                 
                 writer.write("\n=== 集装箱报表 ===\n");
-                writer.write("ID,内容,尺寸,所属公司ID,创建时间\n");
+                writer.write("ID,内容,创建时间\n");
                 for (Container container : containers) {
-                    writer.write(String.format("%d,%s,%s,%d,%s\n",
+                    writer.write(String.format("%d,%s,%s\n",
                             container.getId(),
                             container.getContent(),
-                            container.getSize(),
-                            container.getCompanyId(),
                             container.getCreateTime()));
                 }
             }

@@ -19,57 +19,35 @@
           <span>物流跟踪</span>
         </div>
       </template>
-      <el-table :data="filteredLogistics" stripe>
-        <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column label="订单号" width="160">
+      <el-table :data="filteredLogistics" stripe style="width: 100%;">
+        <el-table-column label="序号" width="80" type="index" :index="(index) => index + 1" />
+        <el-table-column label="订单号">
           <template #default="{ row }">{{ getOrderNumber(row.orderId) }}</template>
         </el-table-column>
-        <el-table-column label="起始港口" width="140">
+        <el-table-column label="起始港口">
           <template #default="{ row }">{{ getPortName(row.startPortId) }}</template>
         </el-table-column>
-        <el-table-column label="终点港口" width="140">
+        <el-table-column label="终点港口">
           <template #default="{ row }">{{ getPortName(row.endPortId) }}</template>
         </el-table-column>
-        <el-table-column label="当前位置" width="140">
+        <el-table-column label="当前位置">
           <template #default="{ row }">{{ getPortName(row.currentPortId) }}</template>
         </el-table-column>
-        <el-table-column label="运输船舶" width="120">
+        <el-table-column label="运输船舶">
           <template #default="{ row }">{{ getShipName(row.shipId) }}</template>
         </el-table-column>
-        <el-table-column label="运输车辆" width="120">
+        <el-table-column label="运输车辆">
           <template #default="{ row }">{{ getCarName(row.carId) }}</template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="120">
-          <template #default="{ row }">
-            <el-button type="primary" size="small" @click="handleViewDetail(row)">查看详情</el-button>
-          </template>
-        </el-table-column>
+        <el-table-column prop="createTime" label="创建时间" />
       </el-table>
     </el-card>
-
-    <el-dialog v-model="showDetailModal" :title="'物流详情 - ' + selectedLogistics?.orderNumber" width="500px">
-      <el-timeline>
-        <el-timeline-item 
-          v-for="(event, index) in selectedLogistics?.tracking" 
-          :key="index"
-          :timestamp="event.time"
-          :type="event.type"
-        >
-          <template #icon>
-            <component :is="getIcon(event.type)" />
-          </template>
-          {{ event.description }}
-        </el-timeline-item>
-      </el-timeline>
-    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, markRaw, computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Compass, ArrowRight, Ship, CircleCheck } from '@element-plus/icons-vue'
 import { getLogistics } from '@/api/customerLogistics'
 import { getOrders } from '@/api/customerOrders'
 import { getPorts } from '@/api/customerPorts'
@@ -77,8 +55,6 @@ import { getShips } from '@/api/customerShips'
 import { getVehicles } from '@/api/customerVehicles'
 
 const searchOrderId = ref('')
-const showDetailModal = ref(false)
-const selectedLogistics = ref(null)
 
 const orders = ref([])
 const ports = ref([])
@@ -115,8 +91,6 @@ onMounted(() => {
   fetchData()
 })
 
-const logisticsDetails = {}
-
 const getOrderNumber = (orderId) => {
   const order = orders.value.find(o => o.id === orderId)
   return order ? order.orderNumber : `订单${orderId}`
@@ -152,26 +126,6 @@ const handleSearch = () => {
       ElMessage.warning('未找到该物流记录')
     }
   }
-}
-
-const getIcon = (type) => {
-  const iconMap = {
-    'success': markRaw(CircleCheck),
-    'primary': markRaw(ArrowRight),
-    'warning': markRaw(Compass),
-    'info': markRaw(Ship)
-  }
-  return iconMap[type] || markRaw(Compass)
-}
-
-const handleViewDetail = (row) => {
-  selectedLogistics.value = logisticsDetails[row.id] || {
-    orderNumber: getOrderNumber(row.orderId),
-    tracking: [
-      { time: '暂无详细跟踪信息', type: 'info', description: '正在获取物流信息...' }
-    ]
-  }
-  showDetailModal.value = true
 }
 </script>
 

@@ -6,5 +6,8 @@ import lombok.Data;
 public class ShipDTO {
     private Integer id;
     private String shipName;
-    private String companyId;
+    private Integer companyId;
+    private Integer status;
+    private Double capacity;
+    private Integer currentPortId;
 }

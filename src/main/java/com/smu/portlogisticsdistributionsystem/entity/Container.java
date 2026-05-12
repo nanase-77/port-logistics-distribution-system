@@ -14,13 +14,12 @@ public class Container {
     @TableId(type = IdType.AUTO)
     private Integer id;
     private String content;
-    private String size;
-    @TableField("company_id")
-    private Integer companyId;
+    @TableField("capacity")
+    private Integer capacity;
     @TableField("update_time")
     private LocalDateTime updateTime;
     @TableField("create_time")
     private LocalDateTime createTime;
-    @TableField("state")
-    private int state;
+    @TableField("status")
+    private Integer status;
 }

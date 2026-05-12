@@ -1,20 +1,23 @@
 package com.smu.portlogisticsdistributionsystem.service.impl;
 
 
-
 import com.smu.portlogisticsdistributionsystem.dto.*;
-import com.smu.portlogisticsdistributionsystem.dto.AlternativeRoute;
-import com.smu.portlogisticsdistributionsystem.dto.OptimizationSuggestion;
-import com.smu.portlogisticsdistributionsystem.dto.ScheduleResult;
-import com.smu.portlogisticsdistributionsystem.dto.SchedulingRequest;
 import com.smu.portlogisticsdistributionsystem.entity.Car;
+import com.smu.portlogisticsdistributionsystem.entity.Container;
+import com.smu.portlogisticsdistributionsystem.entity.Logistic;
+import com.smu.portlogisticsdistributionsystem.entity.Order;
 import com.smu.portlogisticsdistributionsystem.entity.Port;
 import com.smu.portlogisticsdistributionsystem.entity.Ship;
 import com.smu.portlogisticsdistributionsystem.mapper.CarMapper;
+import com.smu.portlogisticsdistributionsystem.mapper.ContainerMapper;
+import com.smu.portlogisticsdistributionsystem.mapper.LogisticMapper;
+import com.smu.portlogisticsdistributionsystem.mapper.OrderMapper;
 import com.smu.portlogisticsdistributionsystem.mapper.PortMapper;
 import com.smu.portlogisticsdistributionsystem.mapper.ShipMapper;
 import com.smu.portlogisticsdistributionsystem.service.GeoService;
 import com.smu.portlogisticsdistributionsystem.service.SchedulingService;
+import com.smu.portlogisticsdistributionsystem.util.UserHolder;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.neo4j.driver.Driver;
@@ -23,8 +26,11 @@ import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.types.Node;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +49,10 @@ public class SchedulingServiceImpl implements SchedulingService {
     private final Driver neo4jDriver;
     private final PortMapper portMapper;
     private final ShipMapper shipMapper;
+    private final ContainerMapper containerMapper;
     private final CarMapper carMapper;
+    private final OrderMapper orderMapper;
+    private final LogisticMapper logisticMapper;
     private final GeoService geoService;
 
     @Override
@@ -127,32 +136,196 @@ public class SchedulingServiceImpl implements SchedulingService {
     }
 
     @Override
+    @Transactional
     public ScheduleResult scheduleCargo(SchedulingRequest request) {
         log.info("Scheduling cargo: {} from port {} to port {}",
                 request.getCargoName(), request.getFromPortId(), request.getToPortId());
 
         ScheduleResult result = calculateShortestPath(request.getFromPortId(), request.getToPortId());
 
-        List<Ship> availableShips = shipMapper.selectList(null);
-        if (!availableShips.isEmpty()) {
-            result.setShipName(availableShips.get(0).getShipName());
+        Integer requiredTeu = request.getTeu();
+        if (requiredTeu == null || requiredTeu <= 0) {
+            requiredTeu = 1;
         }
 
+        // 分配船舶 (status: 0=空闲, 1=在用) - 优先选择在起始港口的船舶，且容量足够
+        Ship allocatedShip = allocateShip(request.getFromPortId(), requiredTeu);
+        if (allocatedShip != null) {
+            result.setShipId(allocatedShip.getId());
+            result.setShipName(allocatedShip.getShipName());
+            result.setShipCapacity(allocatedShip.getCapacity());
+            result.setShipCurrentTeu(allocatedShip.getCurrentTeu());
+        }
+
+        // 分配集装箱 (status: 0=空闲, 1=在用) - 根据容量智能分配
+        Container allocatedContainer = allocateContainer(request.getCargoName(), requiredTeu);
+        if (allocatedContainer != null) {
+            result.setContainerId(allocatedContainer.getId());
+            result.setContainerCode(String.valueOf(allocatedContainer.getId()));
+            result.setContainerCapacity(allocatedContainer.getCapacity());
+            result.setContainerContent(allocatedContainer.getContent());
+        }
+
+        // 分配车辆（集卡运输）(status: '闲置'/'在用') - 从起始港口分配
         if (Boolean.TRUE.equals(request.getNeedCarTransport())) {
-            Port toPort = portMapper.selectById(request.getToPortId());
-            if (toPort != null) {
-                List<Car> availableCars = carMapper.selectList(null).stream()
-                        .filter(c -> "在用".equals(c.getStatus()) &&
-                                c.getPortId() != null && c.getPortId().equals(toPort.getId()))
-                        .collect(Collectors.toList());
-                if (!availableCars.isEmpty()) {
-                    result.setCarName(availableCars.get(0).getCarName());
-                }
+            Car allocatedCar = allocateCar(request.getFromPortId());
+            if (allocatedCar != null) {
+                result.setCarId(allocatedCar.getId());
+                Port fromPort = portMapper.selectById(request.getFromPortId());
+                result.setCarName(allocatedCar.getCarName());
+                result.setCarPort(fromPort != null ? fromPort.getPortName() : "-");
             }
         }
 
+        // 保存货物信息
+        result.setCargoName(request.getCargoName());
+        result.setVolume(request.getVolume());
+        result.setTeu(requiredTeu);
+        result.setFromPortId(request.getFromPortId());
+        result.setToPortId(request.getToPortId());
+
         result.setStatus("SCHEDULED");
         return result;
+    }
+
+    /**
+     * 确认订单，更新数据库
+     */
+    @Override
+    @Transactional
+    public void confirmOrder(ScheduleResult result) {
+        // 1. 获取当前用户
+        Integer userId = null;
+        UserLoginDTO currentUser = UserHolder.getUser();
+        if (currentUser != null) {
+            userId = currentUser.getId();
+        }
+
+        // 2. 创建订单记录
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+        String orderNumber = "ORD" + sdf.format(new Date());
+        Order order = new Order();
+        order.setOrderNumber(orderNumber);
+        order.setUserId(userId);
+        order.setStatus("进行中");
+        if (result.getContainerId() != null) {
+            order.setContainerIds(String.valueOf(result.getContainerId()));
+        }
+        orderMapper.insert(order);
+
+        // 2. 创建物流跟踪记录
+        Logistic logistic = new Logistic();
+        logistic.setOrderId(order.getId());
+        logistic.setStartPortId(result.getFromPortId() != null ? result.getFromPortId().intValue() : null);
+        logistic.setEndPortId(result.getToPortId() != null ? result.getToPortId().intValue() : null);
+        logistic.setCurrentPortId(result.getFromPortId() != null ? result.getFromPortId().intValue() : null);
+        logistic.setShipId(result.getShipId());
+        logistic.setCarId(result.getCarId());
+        logisticMapper.insert(logistic);
+
+        // 3. 更新船舶
+        if (result.getShipId() != null) {
+            Ship ship = shipMapper.selectById(result.getShipId());
+            if (ship != null) {
+                ship.setCurrentTeu(ship.getCurrentTeu() + result.getTeu());
+                shipMapper.updateById(ship);
+            }
+        }
+
+        // 4. 更新集装箱
+        if (result.getContainerId() != null) {
+            Container container = containerMapper.selectById(result.getContainerId());
+            if (container != null) {
+                container.setContent(result.getCargoName());
+                container.setStatus(1);
+                containerMapper.updateById(container);
+            }
+        }
+
+        // 5. 更新车辆
+        if (result.getCarId() != null) {
+            Car car = carMapper.selectById(result.getCarId());
+            if (car != null) {
+                car.setStatus("在用");
+                carMapper.updateById(car);
+            }
+        }
+    }
+
+    /**
+     * 分配船舶 - 优先选择在起始港口且容量足够的船舶
+     */
+    private Ship allocateShip(Long fromPortId, Integer requiredTeu) {
+        List<Ship> availableShips = shipMapper.selectList(new LambdaQueryWrapper<Ship>()
+                .eq(Ship::getStatus, 0)
+                .eq(Ship::getCurrentPortId, fromPortId.intValue()))
+                .stream()
+                .filter(s -> {
+                    int currentTeu = s.getCurrentTeu() != null ? s.getCurrentTeu() : 0;
+                    int capacity = s.getCapacity() != null ? s.getCapacity() : 0;
+                    return capacity >= currentTeu + requiredTeu;
+                })
+                .collect(Collectors.toList());
+
+        if (!availableShips.isEmpty()) {
+            // 选择剩余容量最大的船舶
+            return availableShips.stream()
+                    .max((s1, s2) -> {
+                        int remaining1 = (s1.getCapacity() != null ? s1.getCapacity() : 0) - 
+                                        (s1.getCurrentTeu() != null ? s1.getCurrentTeu() : 0);
+                        int remaining2 = (s2.getCapacity() != null ? s2.getCapacity() : 0) - 
+                                        (s2.getCurrentTeu() != null ? s2.getCurrentTeu() : 0);
+                        return Integer.compare(remaining1, remaining2);
+                    })
+                    .orElse(availableShips.get(0));
+        }
+
+        log.warn("No available ship at port {} with capacity >= {}", fromPortId, requiredTeu);
+        return null;
+    }
+
+    /**
+     * 分配集装箱 - 根据容量智能分配
+     */
+    private Container allocateContainer(String cargoName, Integer requiredTeu) {
+        List<Container> availableContainers = containerMapper.selectList(new LambdaQueryWrapper<Container>()
+                .eq(Container::getStatus, 0))
+                .stream()
+                .filter(c -> c.getCapacity() != null && c.getCapacity() >= requiredTeu)
+                .collect(Collectors.toList());
+
+        if (!availableContainers.isEmpty()) {
+            // 选择容量最接近需求的集装箱
+            Container container = availableContainers.stream()
+                    .min((c1, c2) -> {
+                        int diff1 = Math.abs(c1.getCapacity() - requiredTeu);
+                        int diff2 = Math.abs(c2.getCapacity() - requiredTeu);
+                        return Integer.compare(diff1, diff2);
+                    })
+                    .orElse(availableContainers.get(0));
+
+            log.info("Found container {} with capacity: {}", container.getId(), container.getCapacity());
+            return container;
+        }
+
+        log.warn("No available container with capacity >= {}", requiredTeu);
+        return null;
+    }
+
+    /**
+     * 分配车辆 - 从指定港口分配闲置车辆
+     */
+    private Car allocateCar(Long portId) {
+        List<Car> availableCars = carMapper.selectList(new LambdaQueryWrapper<Car>()
+                .eq(Car::getStatus, "闲置")
+                .eq(Car::getPortId, portId.intValue()));
+
+        if (!availableCars.isEmpty()) {
+            return availableCars.get(0);
+        }
+
+        log.warn("No available car at port {}", portId);
+        return null;
     }
 
     @Override

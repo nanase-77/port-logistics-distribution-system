@@ -2,7 +2,7 @@ create table cars
 (
     id          int auto_increment comment '主键ID'
         primary key,
-    car_name varchar(50)                                     null comment '车辆编号（业务唯一标识，如车牌号）',
+    car_name    varchar(50)                                     null comment '车辆编号（业务唯一标识，如车牌号）',
     image_url   varchar(500)                                    null comment '车辆图片存储路径/URL',
     port_id     int                                             not null comment '所在港口ID（外键关联port表）',
     status      enum ('闲置', '在用') default '闲置'            not null comment '车辆状态',
@@ -46,7 +46,9 @@ create table containers
     size        varchar(20)                        not null comment '尺寸大小（如：20英尺, 40英尺）',
     company_id  int                                not null comment '所属公司',
     update_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
-    create_time datetime default CURRENT_TIMESTAMP null comment '创建时间'
+    create_time datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    status      tinyint                            null,
+    capacity    int                                null
 )
     comment '集装箱信息表';
 
@@ -145,12 +147,15 @@ create table ports
 
 create table ships
 (
-    id          int auto_increment comment '主键ID'
+    id              int auto_increment comment '主键ID'
         primary key,
-    ship_name   varchar(100)                       not null comment '船舶名字',
-    company_id  varchar(100)                       not null comment '所属公司id',
-    update_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
-    create_time datetime default CURRENT_TIMESTAMP null comment '创建时间'
+    ship_name       varchar(100)                       not null comment '船舶名字',
+    company_id      varchar(100)                       not null comment '所属公司id',
+    update_time     datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
+    create_time     datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    status          tinyint                            null,
+    capacity        double   default 0                 null,
+    current_port_id int                                null
 )
     comment '船舶信息表';
 

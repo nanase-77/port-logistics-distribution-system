@@ -23,11 +23,11 @@
         </div>
       </template>
       <el-table :data="filteredCompanies" stripe style="width: 100%;">
-        <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column prop="companyName" label="公司名称" width="200" />
-        <el-table-column prop="country" label="所在国家" width="120" />
-        <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="200">
+        <el-table-column label="序号" width="80" type="index" :index="(index) => index + 1" />
+        <el-table-column prop="companyName" label="公司名称" />
+        <el-table-column prop="country" label="所在国家" />
+        <el-table-column prop="createTime" label="创建时间" />
+        <el-table-column label="操作" width="160">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="openEditModal(row)">编辑</el-button>
             <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>

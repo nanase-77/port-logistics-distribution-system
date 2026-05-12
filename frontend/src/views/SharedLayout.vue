@@ -69,9 +69,7 @@ const adminMenuItems = [
   { index: 'logistics', icon: markRaw(Van), label: '物流跟踪' },
   { index: 'ports', icon: markRaw(Location), label: '港口管理' },
   { index: 'containers', icon: markRaw(Box), label: '集装箱管理' },
-  { index: 'dispatch', icon: markRaw(Connection), label: '智能调度' },
   { index: 'report', icon: markRaw(PieChart), label: '数据报表' },
-  { index: 'ai', icon: markRaw(Message), label: 'AI助手' },
 ]
 
 const userMenuItems = [
@@ -83,6 +81,7 @@ const userMenuItems = [
   { index: 'logistics', icon: markRaw(Van), label: '物流跟踪' },
   { index: 'ports', icon: markRaw(Location), label: '港口查询' },
   { index: 'containers', icon: markRaw(Box), label: '集装箱管理' },
+  { index: 'dispatch', icon: markRaw(Connection), label: '智能调度' },
   { index: 'ai', icon: markRaw(Message), label: 'AI助手' },
 ]
 

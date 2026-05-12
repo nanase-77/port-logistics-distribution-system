@@ -1,488 +1,674 @@
 <template>
-  <div>
-    <!-- 统计卡片 -->
-    <el-row :gutter="20" style="margin-bottom: 20px;">
-      <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-icon port-icon">
-            <el-icon><MapLocation /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">{{ graphStats.portCount }}</div>
-            <div class="stat-label">港口数量</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-icon route-icon">
-            <el-icon><Connection /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">{{ graphStats.routeCount }}</div>
-            <div class="stat-label">航线数量</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-icon ship-icon">
-            <el-icon><Ship /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">{{ graphStats.shipCount }}</div>
-            <div class="stat-label">可用船舶</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-icon sync-icon">
-            <el-icon><Refresh /></el-icon>
-          </div>
-          <div class="stat-info">
-            <el-button type="primary" size="small" @click="syncPorts">
-              同步港口数据
-            </el-button>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+  <div class="dispatch-container">
+    <div class="page-header">
+      <h2>智能调度中心</h2>
+      <p class="subtitle">基于 Neo4j 图数据库的港口物流路径规划</p>
+    </div>
 
     <el-row :gutter="20">
-      <!-- 左侧：港口航线拓扑图 -->
-      <el-col :span="14">
-        <el-card class="section-card">
+      <el-col :span="9">
+        <el-card class="card-primary">
           <template #header>
-            <span>港口航线拓扑图</span>
-            <el-button type="info" size="small" @click="fetchGraphData" style="float: right;">
-              <el-icon><Refresh /></el-icon>
-              刷新数据
-            </el-button>
+            <span class="card-title">路径规划</span>
           </template>
-          <div class="graph-container">
-            <svg :width="graphWidth" :height="graphHeight" class="graph-svg">
-              <!-- 连接线 -->
-              <g class="edges">
-                <line
-                  v-for="(edge, idx) in graphEdges"
-                  :key="'edge-' + idx"
-                  :x1="getNodePosition(edge.fromId).x"
-                  :y1="getNodePosition(edge.fromId).y"
-                  :x2="getNodePosition(edge.toId).x"
-                  :y2="getNodePosition(edge.toId).y"
-                  class="edge-line"
-                  :class="{ 'edge-selected': isEdgeSelected(edge) }"
-                  @click="showRouteDetail(edge)"
-                />
-                <text
-                  v-for="(edge, idx) in graphEdges"
-                  :key="'label-' + idx"
-                  :x="(getNodePosition(edge.fromId).x + getNodePosition(edge.toId).x) / 2"
-                  :y="(getNodePosition(edge.fromId).y + getNodePosition(edge.toId).y) / 2 - 5"
-                  class="edge-label"
-                >{{ edge.distance }} km</text>
-              </g>
-              <!-- 港口节点 -->
-              <g
-                v-for="node in graphNodes"
-                :key="node.id"
-                class="node-group"
-                :transform="`translate(${node.x}, ${node.y})`"
-                @click="showPortDetail(node)"
+
+          <el-form :model="pathForm" class="path-form">
+            <el-form-item label="起始港口" label-width="80px">
+              <el-select
+                v-model="pathForm.fromPortId"
+                placeholder="选择起始港口"
+                style="width: 100%;"
+                @change="resetResults"
               >
-                <circle
-                  :r="25"
-                  :class="['node-circle node-port', { 'node-selected': selectedPort?.id === node.id }]"
-                />
-                <text class="node-label" y="35" text-anchor="middle">{{ node.name }}</text>
-                <text class="node-country" y="50" text-anchor="middle">{{ node.country }}</text>
-              </g>
-            </svg>
-          </div>
-        </el-card>
-
-        <!-- 路径查询结果 -->
-        <el-card class="section-card" style="margin-top: 20px;" v-if="pathResult">
-          <template #header>
-            <span>路径查询结果</span>
-          </template>
-          <div class="path-detail">
-            <div class="path-route">
-              <el-icon class="route-arrow"><ArrowRight /></el-icon>
-              <span class="route-text">{{ pathResult.fromPort }} → {{ pathResult.toPort }}</span>
-            </div>
-            <div class="path-metrics">
-              <div class="metric-item">
-                <span class="metric-label">距离</span>
-                <span class="metric-value">{{ pathResult.distance }} km</span>
-              </div>
-              <div class="metric-item">
-                <span class="metric-label">预计时间</span>
-                <span class="metric-value">{{ pathResult.estimatedTime }} 小时</span>
-              </div>
-              <div class="metric-item">
-                <span class="metric-label">途经港口</span>
-                <span class="metric-value">{{ pathResult.pathLength }} 个</span>
-              </div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-
-      <!-- 右侧：路径查询和费用计算 -->
-      <el-col :span="10">
-        <!-- 路径查询表单 -->
-        <el-card class="section-card">
-          <template #header>
-            <span>路径查询</span>
-          </template>
-          <el-form :inline="false" :model="pathForm" class="path-form">
-            <el-form-item label="起始港口">
-              <el-select v-model="pathForm.fromPortId" placeholder="选择起始港口" style="width: 100%;">
                 <el-option v-for="p in ports" :key="p.id" :label="p.portName" :value="p.id" />
               </el-select>
             </el-form-item>
-            <el-form-item label="目标港口">
-              <el-select v-model="pathForm.toPortId" placeholder="选择目标港口" style="width: 100%;">
+
+            <el-form-item label="目的港口" label-width="80px">
+              <el-select
+                v-model="pathForm.toPortId"
+                placeholder="选择目的港口"
+                style="width: 100%;"
+                @change="resetResults"
+              >
                 <el-option v-for="p in ports" :key="p.id" :label="p.portName" :value="p.id" />
               </el-select>
             </el-form-item>
-            <el-form-item label="货物重量(吨)">
-              <el-input v-model.number="pathForm.weight" type="number" placeholder="输入重量" style="width: 100%;" />
+
+            <el-form-item label="货物描述" label-width="80px">
+              <el-input
+                v-model="pathForm.cargo"
+                placeholder="请输入货物名称或描述"
+                style="width: 100%;"
+              />
             </el-form-item>
+
+            <el-form-item label="货物体积" label-width="80px">
+              <el-input
+                v-model.number="pathForm.volume"
+                type="number"
+                placeholder="请输入货物体积 (立方米)"
+                style="width: 100%;"
+              />
+              <span class="volume-hint">提示: 1 TEU ≈ 33.2 立方米 (标准20英尺集装箱)</span>
+            </el-form-item>
+
+            <el-form-item label="TEU数量" label-width="80px">
+              <el-input
+                v-model.number="pathForm.teu"
+                type="number"
+                placeholder="标准箱数量"
+                style="width: 100%;"
+                :disabled="autoCalculateTeu"
+              />
+              <el-switch
+                v-model="autoCalculateTeu"
+                active-text="自动计算"
+                inactive-text="手动输入"
+                style="margin-top: 8px;"
+              />
+            </el-form-item>
+
             <el-form-item>
-              <el-button type="primary" @click="handlePathQuery" style="width: 100%;">查询路径与费用</el-button>
+              <el-button type="primary" @click="handlePathQuery" style="width: 100%;" :loading="isLoading" id="path-query-btn">
+                <Search /> 计算最优路径
+              </el-button>
             </el-form-item>
           </el-form>
         </el-card>
 
-        <!-- 费用计算结果 -->
-        <el-card class="section-card" style="margin-top: 16px;" v-if="costResult">
+        <el-card class="card-secondary" style="margin-top: 16px;">
           <template #header>
-            <span>费用明细（基于 EagleMap 距离计算）</span>
+            <span class="card-title">系统统计</span>
           </template>
-          <el-descriptions :column="2" border>
-            <el-descriptions-item label="基础运费">¥ {{ costResult.basicFreight.toLocaleString() }}</el-descriptions-item>
-            <el-descriptions-item label="燃油附加费">¥ {{ costResult.fuelSurcharge.toLocaleString() }}</el-descriptions-item>
-            <el-descriptions-item label="港口服务费">¥ {{ costResult.portFee.toLocaleString() }}</el-descriptions-item>
-            <el-descriptions-item label="保险费">¥ {{ costResult.insurance.toLocaleString() }}</el-descriptions-item>
-            <el-descriptions-item label="其他费用">¥ {{ costResult.otherFees.toLocaleString() }}</el-descriptions-item>
-            <el-descriptions-item label="总计" label-class-name="total-label">
-              <span class="total-value">¥ {{ costResult.total.toLocaleString() }}</span>
-            </el-descriptions-item>
-          </el-descriptions>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-value">{{ portCount }}</div>
+              <div class="stat-label">港口总数</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">{{ routeCount }}</div>
+              <div class="stat-label">航线数量</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">{{ shipCount }}</div>
+              <div class="stat-label">可用船舶</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">{{ containerCount }}</div>
+              <div class="stat-label">空集装箱</div>
+            </div>
+          </div>
         </el-card>
+      </el-col>
 
-        <!-- 资源优化建议 -->
-        <el-card class="section-card" style="margin-top: 16px;">
+      <el-col :span="15">
+        <el-card class="card-primary" v-if="pathResult">
           <template #header>
-            <span>资源优化建议</span>
-            <el-button type="info" size="small" @click="fetchSuggestions" style="float: right;">
-              刷新建议
+            <span class="card-title">最优路径</span>
+            <el-button type="info" size="small" @click="handleAllocation" style="float: right;">
+              <Box /> 分配资源
             </el-button>
           </template>
-          <div v-if="optimizationTips.length > 0" class="tips-list">
-            <div v-for="(tip, idx) in optimizationTips" :key="idx" class="tip-item">
-              <el-icon :color="tip.color"><CircleCheck /></el-icon>
-              <div class="tip-content">
-                <div class="tip-title">{{ tip.title }}</div>
-                <div class="tip-desc">{{ tip.description }}</div>
-                <div class="tip-benefit">预计收益: {{ tip.expectedBenefit }}%</div>
+
+          <div class="route-visual">
+            <div class="route-path">
+              <template v-for="(node, index) in pathResult.nodes" :key="node.id">
+                <div class="route-node">
+                  <div class="node-dot" :class="{ 'start': index === 0, 'end': index === pathResult.nodes.length - 1 }"></div>
+                  <div class="node-info">
+                    <div class="node-name">{{ node.name }}</div>
+                    <div class="node-country">{{ node.country }}</div>
+                  </div>
+                </div>
+                <ArrowRight v-if="index < pathResult.nodes.length - 1" class="route-arrow" />
+              </template>
+            </div>
+
+            <div class="route-summary">
+              <div class="summary-item">
+                <Location class="summary-icon" />
+                <div class="summary-content">
+                  <div class="summary-label">总距离</div>
+                  <div class="summary-value">{{ pathResult.distance }} km</div>
+                </div>
+              </div>
+              <div class="summary-divider"></div>
+              <div class="summary-item">
+                <Clock class="summary-icon" />
+                <div class="summary-content">
+                  <div class="summary-label">预计时间</div>
+                  <div class="summary-value">{{ pathResult.estimatedTime }} 小时</div>
+                </div>
+              </div>
+              <div class="summary-divider"></div>
+              <div class="summary-item">
+                <Connection class="summary-icon" />
+                <div class="summary-content">
+                  <div class="summary-label">途经港口</div>
+                  <div class="summary-value">{{ pathResult.pathLength }} 个</div>
+                </div>
               </div>
             </div>
           </div>
-          <el-empty v-else description="暂无优化建议" :image-size="60" />
         </el-card>
 
-        <!-- 异常处理方案 -->
-        <el-card class="section-card" style="margin-top: 16px;">
+        <el-card class="card-primary" v-if="allocationResult" style="margin-top: 16px;">
           <template #header>
-            <span>异常处理方案</span>
+            <span class="card-title">资源分配结果</span>
           </template>
-          <div class="exception-section">
-            <el-select v-model="exceptionType" placeholder="选择异常类型" style="width: 100%; margin-bottom: 12px;">
-              <el-option label="设备故障" value="equipment" />
-              <el-option label="船舶延误" value="delay" />
-              <el-option label="港口拥堵" value="congestion" />
-              <el-option label="货物滞留" value="stranded" />
-            </el-select>
-            <el-button type="warning" @click="handleExceptionQuery" style="width: 100%;">查询替代方案</el-button>
-            <div v-if="exceptionPlans.length > 0" class="exception-plans">
-              <div v-for="(plan, idx) in exceptionPlans" :key="idx" class="exception-plan-item">
-                <div class="plan-header">
-                  <span class="plan-name">{{ plan.routeName }}</span>
-                  <el-tag :type="'success'" size="small">优先级 {{ plan.priority }}</el-tag>
-                </div>
-                <div class="plan-info">
-                  <span>距离: {{ plan.totalDistance }} km</span>
-                  <span>时间: {{ plan.estimatedTime }} 小时</span>
-                </div>
-                <div class="plan-diff">{{ plan.difference }}</div>
+
+          <div class="cargo-info">
+            <div class="cargo-item">
+              <span class="cargo-label">货物</span>
+              <span class="cargo-value">{{ allocationResult.cargo }}</span>
+            </div>
+            <div class="cargo-item">
+              <span class="cargo-label">体积</span>
+              <span class="cargo-value">{{ allocationResult.volume }} m³</span>
+            </div>
+            <div class="cargo-item">
+              <span class="cargo-label">TEU</span>
+              <span class="cargo-value">{{ allocationResult.teu }}</span>
+            </div>
+          </div>
+
+          <div class="allocation-grid">
+            <div class="allocation-item">
+              <div class="allocation-icon ship-icon">
+                <Ship />
+              </div>
+              <div class="allocation-info">
+                <div class="allocation-title">运输船舶</div>
+                <div class="allocation-value">{{ allocationResult.shipName }}</div>
+                <div class="allocation-desc">载重: {{ allocationResult.shipCapacity }} TEU</div>
+                <div class="allocation-desc">已承载: {{ allocationResult.shipCurrentTeu }} TEU</div>
               </div>
             </div>
-            <el-empty v-else-if="exceptionType" description="暂无替代方案" :image-size="60" />
+
+            <div class="allocation-item">
+              <div class="allocation-icon container-icon">
+                <Box />
+              </div>
+              <div class="allocation-info">
+                <div class="allocation-title">集装箱</div>
+                <div class="allocation-value">{{ allocationResult.containerCode }}</div>
+                <div class="allocation-desc">容量: {{ allocationResult.containerCapacity }} TEU</div>
+              </div>
+            </div>
+
+            <div class="allocation-item">
+              <div class="allocation-icon car-icon">
+                <Van />
+              </div>
+              <div class="allocation-info">
+                <div class="allocation-title">集卡车辆</div>
+                <div class="allocation-value">{{ allocationResult.carName }}</div>
+                <div class="allocation-desc">所属港口: {{ allocationResult.carPort }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="allocation-summary">
+            <el-button type="success" @click="generateOrder" style="margin-top: 16px;">
+              <Document /> 生成物流单
+            </el-button>
+          </div>
+        </el-card>
+
+        <el-card v-if="!pathResult && !isLoading" class="empty-state">
+          <div class="empty-content">
+            <Ship class="empty-icon" />
+            <p class="empty-title">开始规划您的航线</p>
+            <p class="empty-desc">在左侧选择起始港口和目的港口，系统将为您计算最优路径</p>
           </div>
         </el-card>
       </el-col>
     </el-row>
-
-    <!-- 港口详情弹窗 -->
-    <el-dialog v-if="selectedPort" title="港口详情" :visible.sync="showPortDialog" width="400px">
-      <el-descriptions :column="2" border>
-        <el-descriptions-item label="港口名称">{{ selectedPort.name }}</el-descriptions-item>
-        <el-descriptions-item label="所属国家">{{ selectedPort.country }}</el-descriptions-item>
-        <el-descriptions-item label="纬度">{{ selectedPort.latitude }}</el-descriptions-item>
-        <el-descriptions-item label="经度">{{ selectedPort.longitude }}</el-descriptions-item>
-      </el-descriptions>
-    </el-dialog>
-
-    <!-- 航线详情弹窗 -->
-    <el-dialog v-if="selectedRoute" title="航线详情" :visible.sync="showRouteDialog" width="400px">
-      <el-descriptions :column="2" border>
-        <el-descriptions-item label="起点港口">{{ selectedRoute.fromName }}</el-descriptions-item>
-        <el-descriptions-item label="终点港口">{{ selectedRoute.toName }}</el-descriptions-item>
-        <el-descriptions-item label="距离">{{ selectedRoute.distance }} km</el-descriptions-item>
-      </el-descriptions>
-      <div style="margin-top: 16px;">
-        <el-button type="primary" @click="handleRouteCostQuery">计算费用</el-button>
-      </div>
-    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { CircleCheck, MapLocation, Ship, Connection, Refresh, ArrowRight } from '@element-plus/icons-vue'
+import { Search, Location, Clock, Connection, Ship, Box, Van, ArrowRight, Document } from '@element-plus/icons-vue'
 import { schedulingApi } from '@/api/scheduling'
-import { getPorts } from '@/api/ports'
+import { getPorts } from '@/api/adminPorts'
+import { getShips } from '@/api/adminShips'
+import { getContainers } from '@/api/adminContainers'
+import { getVehicles } from '@/api/adminVehicles'
 
-// 路径查询表单
 const pathForm = reactive({
   fromPortId: '',
   toPortId: '',
-  weight: 10
+  cargo: '',
+  volume: null,
+  teu: 1
 })
+
+const autoCalculateTeu = ref(true)
 
 const ports = ref([])
-const optimizationTips = ref([])
-const exceptionType = ref('equipment')
-const exceptionPlans = ref([])
+const ships = ref([])
+const containers = ref([])
+const cars = ref([])
 
-// 图数据
-const graphNodes = ref([])
-const graphEdges = ref([])
-const graphStats = ref({
-  portCount: 0,
-  routeCount: 0,
-  shipCount: 0
-})
-const graphWidth = 650
-const graphHeight = 380
+const isLoading = ref(false)
 
-// 查询结果
 const pathResult = ref(null)
-const costResult = ref(null)
+const allocationResult = ref(null)
 
-// 选中状态
-const selectedPort = ref(null)
-const showPortDialog = ref(false)
-const selectedRoute = ref(null)
-const showRouteDialog = ref(false)
+const portCount = computed(() => ports.value.length)
+const routeCount = computed(() => ports.value.length > 0 ? ports.value.length * (ports.value.length - 1) : 0)
+const shipCount = computed(() => {
+  if (!pathForm.fromPortId) {
+    return 0
+  }
+  const selectedPortId = Number(pathForm.fromPortId)
+  return ships.value.filter(s => s.status === 0 && Number(s.currentPortId) === selectedPortId).length
+})
+const containerCount = computed(() => containers.value.filter(c => c.status === 0).length)
+
+watch(() => pathForm.volume, (newVolume) => {
+  if (autoCalculateTeu.value && newVolume) {
+    pathForm.teu = Math.ceil(newVolume / 33.2)
+  }
+})
+
+watch(autoCalculateTeu, (val) => {
+  if (val && pathForm.volume) {
+    pathForm.teu = Math.ceil(pathForm.volume / 33.2)
+  }
+})
 
 const fetchPorts = async () => {
   try {
     const res = await getPorts()
     ports.value = res.records || res || []
-  } catch { /* ignore */ }
-}
-
-const fetchGraphData = async () => {
-  try {
-    const res = await schedulingApi.getGraphData()
-    // 只保留港口节点
-    const nodes = res.nodes || []
-    const portNodes = nodes.filter(n => n.type === 'port' || !n.type)
-    
-    // 布局节点
-    graphNodes.value = layoutNodesInGrid(portNodes)
-    
-    // 转换边数据格式
-    const edges = res.edges || []
-    graphEdges.value = edges.map(e => ({
-      fromId: e.from || e.fromId,
-      fromName: e.fromName,
-      toId: e.to || e.toId,
-      toName: e.toName,
-      distance: e.distance || e.label
-    }))
-    
-    graphStats.value = res.stats || { portCount: 0, routeCount: 0, shipCount: 0 }
   } catch (error) {
-    console.error('Fetch graph data error:', error)
-    // 备用方案：直接从港口数据生成
-    await fetchPorts()
-    const portNodes = ports.value.map((p, i) => ({
-      id: p.id,
-      name: p.portName,
-      country: p.country,
-      latitude: p.latitude,
-      longitude: p.longitude,
-      x: 80 + (i % 4) * 150,
-      y: 80 + Math.floor(i / 4) * 120
-    }))
-    graphNodes.value = portNodes
-    graphStats.value.portCount = portNodes.length
-    graphStats.value.routeCount = portNodes.length * (portNodes.length - 1) / 2
+    console.error('获取港口失败:', error)
   }
 }
 
-const layoutNodesInGrid = (nodes) => {
-  const cols = 4
-  const padding = 80
-  const nodeWidth = 150
-  
-  return nodes.map((node, index) => ({
-    ...node,
-    x: padding + (index % cols) * nodeWidth,
-    y: padding + Math.floor(index / cols) * 120
-  }))
+const fetchShips = async () => {
+  try {
+    const res = await getShips()
+    ships.value = res.records || res || []
+  } catch (error) {
+    console.error('获取船舶失败:', error)
+  }
+}
+
+const fetchContainers = async () => {
+  try {
+    const res = await getContainers()
+    containers.value = res.records || res || []
+  } catch (error) {
+    console.error('获取集装箱失败:', error)
+  }
+}
+
+const fetchCars = async () => {
+  try {
+    const res = await getVehicles()
+    cars.value = res.records || res || []
+  } catch (error) {
+    console.error('获取车辆失败:', error)
+  }
 }
 
 onMounted(() => {
   fetchPorts()
-  fetchSuggestions()
-  fetchGraphData()
+  fetchShips()
+  fetchContainers()
+  fetchCars()
 })
 
-const syncPorts = async () => {
-  try {
-    await schedulingApi.syncPorts()
-    ElMessage.success('港口数据同步成功')
-    await fetchGraphData()
-  } catch (error) {
-    ElMessage.error('同步失败')
-    console.error('Sync error:', error)
-  }
-}
-
-const fetchSuggestions = async () => {
-  try {
-    const res = await schedulingApi.getSuggestions()
-    optimizationTips.value = res.map(item => ({
-      title: item.title,
-      description: item.description,
-      expectedBenefit: item.expectedBenefit,
-      color: getSuggestionColor(item.type)
-    }))
-  } catch (error) {
-    optimizationTips.value = [
-      { title: '资源状态检查', description: '系统正在获取资源优化建议...', expectedBenefit: 0, color: '#6b7280' }
-    ]
-  }
-}
-
-const getSuggestionColor = (type) => {
-  const colorMap = {
-    '资源利用率': '#10b981',
-    '路径优化': '#3b82f6',
-    '负载均衡': '#f59e0b'
-  }
-  return colorMap[type] || '#6b7280'
-}
-
-const getNodePosition = (nodeId) => {
-  const node = graphNodes.value.find(n => n.id === nodeId)
-  return node ? { x: node.x || 100, y: node.y || 100 } : { x: 100, y: 100 }
-}
-
-const isEdgeSelected = (edge) => {
-  if (!pathResult.value) return false
-  return false
-}
-
-const showPortDetail = (node) => {
-  selectedPort.value = node
-  showPortDialog.value = true
-}
-
-const showRouteDetail = (edge) => {
-  selectedRoute.value = edge
-  showRouteDialog.value = true
+const resetResults = () => {
+  pathResult.value = null
+  allocationResult.value = null
 }
 
 const handlePathQuery = async () => {
   if (!pathForm.fromPortId || !pathForm.toPortId) {
-    ElMessage.warning('请选择起始港口和目标港口')
+    ElMessage.warning('请选择起始港口和目的港口')
     return
   }
+
+  if (pathForm.fromPortId === pathForm.toPortId) {
+    ElMessage.warning('起始港口和目的港口不能相同')
+    return
+  }
+
+  if (!pathForm.cargo.trim()) {
+    ElMessage.warning('请输入货物描述')
+    return
+  }
+
+  if (!pathForm.volume || pathForm.volume <= 0) {
+    ElMessage.warning('请输入有效的货物体积')
+    return
+  }
+
+  isLoading.value = true
 
   try {
     const pathRes = await schedulingApi.findShortestPath(pathForm.fromPortId, pathForm.toPortId)
     pathResult.value = pathRes
-
-    const costRes = await schedulingApi.calculateCost(pathForm.fromPortId, pathForm.toPortId, pathForm.weight)
-    costResult.value = costRes
-
-    ElMessage.success('查询成功')
+    ElMessage.success('路径计算完成')
   } catch (error) {
-    ElMessage.error('查询失败')
+    ElMessage.error('路径计算失败')
     console.error('Path query error:', error)
+  } finally {
+    isLoading.value = false
   }
 }
 
-const handleRouteCostQuery = async () => {
-  if (!selectedRoute.value) return
+const handleAllocation = async () => {
+  if (!pathResult.value) return
+
+  isLoading.value = true
 
   try {
-    const res = await schedulingApi.calculateCost(
-      selectedRoute.value.fromId,
-      selectedRoute.value.toId,
-      pathForm.weight
-    )
-    costResult.value = res
-    showRouteDialog.value = false
-    ElMessage.success('费用计算完成')
+    const request = {
+      fromPortId: pathForm.fromPortId,
+      toPortId: pathForm.toPortId,
+      cargoName: pathForm.cargo,
+      volume: pathForm.volume,
+      teu: pathForm.teu,
+      needCarTransport: true
+    }
+
+    const res = await schedulingApi.scheduleCargo(request)
+
+    allocationResult.value = {
+      cargoName: pathForm.cargo,
+      volume: pathForm.volume,
+      teu: pathForm.teu,
+      fromPortId: pathForm.fromPortId,
+      toPortId: pathForm.toPortId,
+      shipId: res.shipId,
+      shipName: res.shipName || '未分配',
+      shipCapacity: res.shipCapacity || 0,
+      shipCurrentTeu: res.shipCurrentTeu || 0,
+      containerId: res.containerId,
+      containerCode: res.containerCode || '未分配',
+      containerCapacity: res.containerCapacity || 0,
+      containerContent: res.containerContent || '-',
+      carId: res.carId,
+      carName: res.carName || '未分配',
+      carPort: res.carPort || '-'
+    }
+
+    ElMessage.success('资源分配完成')
   } catch (error) {
-    ElMessage.error('费用计算失败')
+    ElMessage.error('资源分配失败')
+    console.error('Allocation error:', error)
+  } finally {
+    isLoading.value = false
   }
 }
 
-const handleExceptionQuery = async () => {
+const generateOrder = async () => {
+  if (!allocationResult.value) {
+    ElMessage.warning('请先进行资源分配')
+    return
+  }
+  
+  if (!pathResult.value) {
+    ElMessage.warning('请先计算路径')
+    return
+  }
+
   try {
-    const res = await schedulingApi.getAlternatives({
-      exceptionType: exceptionType.value
-    })
+    const orderData = {
+      ...allocationResult.value,
+      ...pathResult.value
+    }
     
-    exceptionPlans.value = res.map(item => ({
-      routeName: item.routeName,
-      totalDistance: item.totalDistance,
-      estimatedTime: item.estimatedTime,
-      difference: item.difference,
-      priority: item.priority
-    }))
+    console.log('确认订单数据:', orderData)
+    
+    await schedulingApi.confirmOrder(orderData)
+    ElMessage.success('物流单生成成功！资源已分配')
+    
+    await fetchShips()
+    await fetchContainers()
+    await fetchCars()
   } catch (error) {
-    ElMessage.error('获取替代方案失败')
-    console.error('Exception query error:', error)
+    ElMessage.error('物流单生成失败: ' + (error.message || '未知错误'))
+    console.error('Generate order error:', error)
   }
 }
 </script>
 
 <style scoped>
-.section-card {
-  margin-bottom: 0;
-  height: 100%;
+.dispatch-container {
+  padding: 20px;
 }
 
-.stat-card {
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-header h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.card-primary {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e5e7eb;
+}
+
+.card-secondary {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.path-form {
+  padding: 8px 0;
+}
+
+.volume-hint {
+  display: block;
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+  display: block;
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.route-visual {
+  padding: 16px 0;
+}
+
+.route-path {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 8px;
+  margin-bottom: 16px;
 }
 
-.stat-icon {
+.route-node {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.node-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #667eea;
+}
+
+.node-dot.start {
+  background: #10b981;
+}
+
+.node-dot.end {
+  background: #ef4444;
+}
+
+.node-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.node-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.node-country {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.route-arrow {
+  color: #9ca3af;
+  font-size: 20px;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.route-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.summary-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #4b5563;
+}
+
+.summary-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.summary-label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.summary-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.summary-divider {
+  width: 1px;
+  height: 40px;
+  background: #e5e7eb;
+}
+
+.cargo-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.cargo-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.cargo-label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.cargo-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.allocation-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.allocation-item {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.allocation-icon {
   width: 48px;
   height: 48px;
   border-radius: 12px;
@@ -490,252 +676,75 @@ const handleExceptionQuery = async () => {
   align-items: center;
   justify-content: center;
   font-size: 24px;
-}
-
-.port-icon {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
 }
 
 .ship-icon {
-  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-  color: white;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
 }
 
-.route-icon {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  color: white;
+.container-icon {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
 }
 
-.sync-icon {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  color: white;
+.car-icon {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
 }
 
-.stat-info {
+.allocation-info {
   flex: 1;
 }
 
-.stat-value {
-  font-size: 24px;
-  font-weight: 700;
-  color: #1f2937;
-}
-
-.stat-label {
-  font-size: 13px;
+.allocation-title {
+  font-size: 12px;
   color: #6b7280;
 }
 
-.path-form {
-  padding: 12px 0;
-}
-
-.graph-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #f8fafc;
-  border-radius: 8px;
-  padding: 20px;
-  min-height: 380px;
-}
-
-.graph-svg {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.edge-line {
-  stroke: #cbd5e1;
-  stroke-width: 2;
-  stroke-dasharray: 5, 5;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.edge-line:hover,
-.edge-selected {
-  stroke: #667eea;
-  stroke-width: 3;
-}
-
-.edge-label {
-  font-size: 11px;
-  fill: #64748b;
-  background: white;
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.node-group {
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.node-group:hover {
-  transform: scale(1.05);
-}
-
-.node-circle {
-  stroke-width: 3;
-}
-
-.node-port {
-  fill: #667eea;
-  stroke: #5a67d8;
-}
-
-.node-selected {
-  fill: #f59e0b;
-  stroke: #d97706;
-}
-
-.node-label {
-  font-size: 13px;
-  fill: #374151;
-  font-weight: 600;
-}
-
-.node-country {
-  font-size: 11px;
-  fill: #6b7280;
-}
-
-.path-detail {
-  padding: 16px;
-}
-
-.path-route {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding: 12px;
-  background: #f0f9ff;
-  border-radius: 8px;
-}
-
-.route-arrow {
-  color: #3b82f6;
-  font-size: 20px;
-}
-
-.route-text {
+.allocation-value {
   font-size: 16px;
   font-weight: 600;
-  color: #1e40af;
+  color: #1f2937;
+  margin-top: 2px;
 }
 
-.path-metrics {
+.allocation-desc {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.allocation-summary {
+  text-align: center;
+  margin-top: 16px;
+}
+
+.empty-state {
+  min-height: 200px;
   display: flex;
-  gap: 24px;
+  align-items: center;
+  justify-content: center;
 }
 
-.metric-item {
+.empty-content {
   text-align: center;
 }
 
-.metric-label {
-  display: block;
-  font-size: 13px;
-  color: #6b7280;
-  margin-bottom: 4px;
+.empty-icon {
+  font-size: 64px;
+  color: #cbd5e1;
+  margin-bottom: 16px;
 }
 
-.metric-value {
+.empty-title {
   font-size: 18px;
   font-weight: 600;
   color: #1f2937;
+  margin: 0 0 8px 0;
 }
 
-.total-label {
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.total-value {
-  font-size: 18px;
-  font-weight: 700;
-  color: #ef4444;
-}
-
-.tips-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.tip-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 12px;
-  background-color: #f5f7fa;
-  border-radius: 8px;
-}
-
-.tip-content {
-  flex: 1;
-}
-
-.tip-title {
-  font-weight: 600;
+.empty-desc {
   font-size: 14px;
-  margin-bottom: 4px;
-}
-
-.tip-desc {
-  font-size: 13px;
-  color: #666;
-  line-height: 1.5;
-  margin-bottom: 4px;
-}
-
-.tip-benefit {
-  font-size: 12px;
-  color: #10b981;
-}
-
-.exception-section {
-  padding: 4px 0;
-}
-
-.exception-plans {
-  margin-top: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.exception-plan-item {
-  padding: 12px;
-  background-color: #fef3c7;
-  border-radius: 8px;
-}
-
-.plan-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.plan-name {
-  font-weight: 600;
-}
-
-.plan-info {
-  display: flex;
-  gap: 16px;
-  font-size: 13px;
-  color: #666;
-  margin-bottom: 8px;
-}
-
-.plan-diff {
-  font-size: 13px;
-  color: #92400e;
+  color: #6b7280;
+  margin: 0;
 }
 </style>

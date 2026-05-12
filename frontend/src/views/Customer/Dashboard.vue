@@ -95,6 +95,7 @@ const getStatusType = (status) => {
 
 .stat-card {
   display: flex;
+  flex-direction: column;
   align-items: center;
   padding: 20px;
 }
@@ -106,7 +107,9 @@ const getStatusType = (status) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 20px;
+  margin-bottom: 12px;
+  margin-left: auto;
+  margin-right: auto;
   color: white;
 }
 
@@ -124,6 +127,7 @@ const getStatusType = (status) => {
 
 .stat-content {
   flex: 1;
+  text-align: center;
 }
 
 .stat-value {
@@ -131,6 +135,7 @@ const getStatusType = (status) => {
   font-weight: bold;
   color: #303133;
   margin-bottom: 5px;
+  display: block;
 }
 
 .stat-label {

@@ -16,7 +16,7 @@ public interface ShipMapper extends BaseMapper<Ship> {
     List<Ship> selectByName(@Param("keyword") String keyword);
 
     @Select("<script>" +
-            "SELECT s.id, s.ship_name, s.company_id, s.update_time, s.create_time, c.company_name " +
+            "SELECT s.id, s.ship_name, s.company_id, s.status, s.capacity, s.current_teu, s.current_port_id, s.update_time, s.create_time, c.company_name " +
             "FROM ships s LEFT JOIN companies c ON s.company_id = c.id " +
             "<where>" +
             "<if test='shipName != null and shipName != \"\"'>" +

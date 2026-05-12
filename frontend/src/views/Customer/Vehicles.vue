@@ -3,7 +3,7 @@
     <el-card class="search-card">
       <el-input 
         v-model="searchCarName" 
-        placeholder="输入拖车编号查询" 
+        placeholder="输入车辆编号查询" 
         style="width: 300px;"
         @keyup.enter="handleSearch"
       >
@@ -17,23 +17,18 @@
       <template #header>
         <div class="card-header">
           <span>车辆列表</span>
-          <el-select v-model="statusFilter" placeholder="筛选状态" style="width: 150px;">
-            <el-option label="全部" value="" />
-            <el-option label="闲置" value="闲置" />
-            <el-option label="在用" value="在用" />
-          </el-select>
         </div>
       </template>
-      <el-table :data="filteredVehicles" stripe>
-        <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column prop="carName" label="拖车编号" width="140" />
-        <el-table-column prop="portName" label="所在港口" width="140" />
-        <el-table-column prop="status" label="状态" width="100">
+      <el-table :data="filteredVehicles" stripe style="width: 100%;">
+        <el-table-column label="序号" width="80" type="index" :index="(index) => index + 1" />
+        <el-table-column prop="carName" label="车辆编号" />
+        <el-table-column prop="portName" label="所在港口" />
+        <el-table-column label="状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="row.status === '闲置' ? 'success' : 'primary'">{{ row.status }}</el-tag>
+            <el-tag :type="row.status === '在用' ? 'success' : 'warning'">{{ row.status }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" />
+        <el-table-column prop="createTime" label="创建时间" />
       </el-table>
     </el-card>
   </div>

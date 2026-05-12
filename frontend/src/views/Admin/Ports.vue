@@ -24,7 +24,7 @@
             <span>港口资源管理</span>
           </template>
           <el-table :data="filteredPorts" stripe style="width: 100%;">
-            <el-table-column prop="id" label="ID" width="60" />
+            <el-table-column label="序号" width="60" type="index" :index="indexMethod" />
             <el-table-column prop="portName" label="港口名称" width="120" />
             <el-table-column prop="longitude" label="经度" width="110" />
             <el-table-column prop="latitude" label="纬度" width="110" />
@@ -106,6 +106,10 @@ const form = reactive({
   longitude: 116.404,
   latitude: 39.915
 })
+
+const indexMethod = (index) => {
+  return index + 1
+}
 
 const fetchData = async () => {
   try {

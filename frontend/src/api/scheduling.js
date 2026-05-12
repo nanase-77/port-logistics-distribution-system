@@ -67,5 +67,13 @@ export const schedulingApi = {
       method: 'get',
       params: { fromPortId, toPortId }
     })
+  },
+
+  confirmOrder: (data) => {
+    return request({
+      url: '/scheduling/confirm-order',
+      method: 'post',
+      data
+    })
   }
 }

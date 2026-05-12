@@ -5,6 +5,6 @@ import lombok.Data;
 @Data
 public class ContainerQueryDTO {
     private String content;
-    private String size;
-    private Integer companyId;
+    private Integer capacity;
+    private Integer status;
 }

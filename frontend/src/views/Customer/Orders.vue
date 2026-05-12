@@ -25,15 +25,12 @@
           </el-select>
         </div>
       </template>
-      <el-table :data="filteredOrders" stripe>
+      <el-table :data="filteredOrders" stripe style="width: 100%;">
+        <el-table-column label="序号" width="80" type="index" :index="(index) => index + 1" />
         <el-table-column prop="orderNumber" label="订单号" />
+        <el-table-column prop="containerIds" label="集装箱使用情况" />
         <el-table-column prop="createTime" label="创建时间" />
         <el-table-column prop="status" label="状态" />
-        <el-table-column label="操作" width="120">
-          <template #default="{ row }">
-            <el-button type="primary" size="small">查看详情</el-button>
-          </template>
-        </el-table-column>
       </el-table>
     </el-card>
   </div>

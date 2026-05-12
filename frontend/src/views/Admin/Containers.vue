@@ -1,9 +1,9 @@
 <template>
   <div>
     <el-card class="search-card">
-      <el-input 
-        v-model="searchContent" 
-        placeholder="输入货物描述查询" 
+      <el-input
+        v-model="searchContent"
+        placeholder="输入货物描述查询"
         style="width: 300px;"
         @keyup.enter="handleSearch"
       >
@@ -23,14 +23,18 @@
         </div>
       </template>
       <el-table :data="filteredContainers" stripe style="width: 100%;">
-        <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column prop="content" label="货物描述" width="200" />
-        <el-table-column prop="size" label="尺寸" width="100" />
-        <el-table-column label="所属公司" width="160">
-          <template #default="{ row }">{{ getCompanyName(row.companyId) }}</template>
+        <el-table-column label="序号" width="80" type="index" :index="(index) => index + 1" />
+        <el-table-column label="货物描述">
+          <template #default="{ row }">{{ row.content || '<暂无>' }}</template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="200">
+        <el-table-column prop="capacity" label="容量(TEU)" />
+        <el-table-column label="状态" width="100">
+          <template #default="{ row }">
+            <el-tag :type="getStatusType(getStateText(row.status))">{{ getStateText(row.status) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="createTime" label="创建时间" />
+        <el-table-column label="操作" width="160">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="openEditModal(row)">编辑</el-button>
             <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
@@ -41,18 +45,13 @@
 
     <el-dialog v-model="showModal" :title="isEdit ? '编辑集装箱' : '新增集装箱'" width="500px">
       <el-form :model="form" label-width="100px">
-        <el-form-item label="货物描述">
-          <el-input v-model="form.content" placeholder="请输入货物描述" />
+        <el-form-item label="容量(TEU)">
+          <el-input-number v-model="form.capacity" :min="1" :max="100" style="width: 100%;" />
         </el-form-item>
-        <el-form-item label="尺寸">
-          <el-select v-model="form.size" style="width: 100%;">
-            <el-option label="20英尺" value="20英尺" />
-            <el-option label="40英尺" value="40英尺" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="所属公司">
-          <el-select v-model="form.companyId" style="width: 100%;">
-            <el-option v-for="company in companies" :key="company.id" :label="company.name" :value="company.id" />
+        <el-form-item label="状态">
+          <el-select v-model="form.status" style="width: 100%;">
+            <el-option label="空闲" :value="0" />
+            <el-option label="使用中" :value="1" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -68,21 +67,12 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getContainers, addContainer, updateContainer, deleteContainer } from '@/api/containers'
-import { getCompanies } from '@/api/companies'
 
 const showModal = ref(false)
 const isEdit = ref(false)
 const searchContent = ref('')
 
-const companies = ref([])
 const containers = ref([])
-
-const fetchCompanies = async () => {
-  try {
-    const res = await getCompanies()
-    companies.value = res.records || res || []
-  } catch { /* ignore */ }
-}
 
 const fetchData = async () => {
   try {
@@ -94,23 +84,35 @@ const fetchData = async () => {
 }
 
 onMounted(() => {
-  fetchCompanies()
   fetchData()
 })
 
-const getCompanyName = (companyId) => {
-  const company = companies.value.find(c => c.id === companyId)
-  return company ? company.companyName : `公司${companyId}`
+const getStateText = (state) => {
+  const stateStr = String(state)
+  const stateMap = {
+    '0': '空闲',
+    '1': '使用中'
+  }
+  return stateMap[stateStr] || '未知'
+}
+
+const getStatusType = (status) => {
+  const statusMap = {
+    '空闲': 'success',
+    '使用中': 'primary',
+    '未知': 'info'
+  }
+  return statusMap[status] || 'info'
 }
 
 const filteredContainers = computed(() => {
   if (!searchContent.value) return containers.value
-  return containers.value.filter(item => item.content.includes(searchContent.value))
+  return containers.value.filter(item => item.content && item.content.includes(searchContent.value))
 })
 
 const handleSearch = () => {
   if (searchContent.value) {
-    const found = containers.value.find(item => item.content.includes(searchContent.value))
+    const found = containers.value.find(item => item.content && item.content.includes(searchContent.value))
     if (!found) {
       ElMessage.warning('未找到该集装箱')
     }
@@ -119,16 +121,14 @@ const handleSearch = () => {
 
 const form = reactive({
   id: null,
-  content: '',
-  size: '20英尺',
-  companyId: 1
+  capacity: 1,
+  status: 0
 })
 
 const resetForm = () => {
   form.id = null
-  form.content = ''
-  form.size = '20英尺'
-  form.companyId = 1
+  form.capacity = 1
+  form.status = 0
 }
 
 const openAddModal = () => {
@@ -140,23 +140,18 @@ const openAddModal = () => {
 const openEditModal = (row) => {
   isEdit.value = true
   form.id = row.id
-  form.content = row.content
-  form.size = row.size
-  form.companyId = row.companyId
+  form.capacity = row.capacity || 1
+  form.status = row.status
   showModal.value = true
 }
 
 const handleSave = async () => {
-  if (!form.content) {
-    ElMessage.warning('请输入货物描述')
-    return
-  }
   try {
     if (isEdit.value) {
-      await updateContainer({ id: form.id, content: form.content, companyId: form.companyId })
+      await updateContainer({ id: form.id, capacity: form.capacity, status: form.status })
       ElMessage.success('集装箱信息已更新')
     } else {
-      await addContainer({ content: form.content, companyId: form.companyId })
+      await addContainer({ capacity: form.capacity, status: form.status })
       ElMessage.success('集装箱已创建')
     }
     showModal.value = false
@@ -166,30 +161,31 @@ const handleSave = async () => {
   }
 }
 
-const handleDelete = (row) => {
-  ElMessageBox.confirm(`确定要删除集装箱 "${row.content}" 吗？`, '确认删除', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(async () => {
-    try {
-      await deleteContainer(row.id)
-      ElMessage.success('集装箱已删除')
-      fetchData()
-    } catch {
-      ElMessage.error('删除失败')
+const handleDelete = async (row) => {
+  try {
+    await ElMessageBox.confirm('确定要删除该集装箱吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    await deleteContainer(row.id)
+    ElMessage.success('删除成功')
+    fetchData()
+  } catch {
+    if (ElMessageBox.close) {
+      ElMessage.info('已取消删除')
     }
-  }).catch(() => {})
+  }
 }
 </script>
 
 <style scoped>
 .search-card {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .table-card {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .card-header {
@@ -200,6 +196,6 @@ const handleDelete = (row) => {
 
 .header-actions {
   display: flex;
-  align-items: center;
+  gap: 8px;
 }
 </style>

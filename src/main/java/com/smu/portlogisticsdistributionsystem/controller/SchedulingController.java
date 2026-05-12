@@ -44,6 +44,15 @@ public class SchedulingController {
     }
 
     /**
+     * 确认订单，更新数据库
+     */
+    @PostMapping("/confirm-order")
+    public Result<String> confirmOrder(@RequestBody ScheduleResult result) {
+        schedulingService.confirmOrder(result);
+        return Result.success("订单确认成功");
+    }
+
+    /**
      * 获取资源优化建议
      */
     @GetMapping("/suggestions")

@@ -15,6 +15,6 @@ public interface ContainerMapper extends BaseMapper<Container> {
     @Select("SELECT * FROM containers WHERE container_no LIKE CONCAT('%', #{keyword}, '%') OR content LIKE CONCAT('%', #{keyword}, '%')")
     List<Container> selectByKeyword(@Param("keyword") String keyword);
 
-    @Select("SELECT c.*, cp.company_name FROM containers c LEFT JOIN companies cp ON c.company_id = cp.id")
+    @Select("SELECT c.id, c.content, c.capacity, c.status, c.create_time, c.update_time FROM containers c")
     IPage<ContainerWithCompanyDTO> selectWithCompany(Page<ContainerWithCompanyDTO> page);
 }

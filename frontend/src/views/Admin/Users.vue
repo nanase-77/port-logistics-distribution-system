@@ -21,19 +21,19 @@
         </div>
       </template>
       <el-table :data="filteredUsers" stripe>
-        <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column prop="username" label="用户名" width="120" />
-        <el-table-column prop="phone" label="联系方式" width="140" />
-        <el-table-column prop="state" label="用户身份" width="100">
+        <el-table-column label="序号" width="60" type="index" :index="(index) => index + 1" />
+        <el-table-column prop="username" label="用户名" />
+        <el-table-column prop="phone" label="联系方式" />
+        <el-table-column label="用户身份" width="120">
           <template #default="{ row }">
             <el-tag :type="row.state === 1 ? 'danger' : 'primary'">
               {{ row.state === 1 ? '管理员' : '普通用户' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="country" label="所在国家" width="120" />
-        <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="200">
+        <el-table-column prop="country" label="所在国家" />
+        <el-table-column prop="createTime" label="创建时间" />
+        <el-table-column label="操作" width="180">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="openEditModal(row)">编辑</el-button>
             <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>

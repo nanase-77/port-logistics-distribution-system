@@ -91,6 +91,7 @@ onMounted(() => {
 
 .stat-card {
   display: flex;
+  flex-direction: column;
   align-items: center;
   padding: 20px;
 }
@@ -102,7 +103,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 20px;
+  margin-bottom: 12px;
   color: white;
 }
 
@@ -124,6 +125,7 @@ onMounted(() => {
 
 .stat-content {
   flex: 1;
+  text-align: center;
 }
 
 .stat-value {
@@ -131,6 +133,7 @@ onMounted(() => {
   font-weight: bold;
   color: #303133;
   margin-bottom: 5px;
+  display: block;
 }
 
 .stat-label {

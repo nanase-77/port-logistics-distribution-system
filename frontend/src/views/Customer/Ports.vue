@@ -24,12 +24,12 @@
               <span>港口列表</span>
             </div>
           </template>
-          <el-table :data="filteredPorts" stripe>
-            <el-table-column prop="id" label="ID" width="60" />
+          <el-table :data="filteredPorts" stripe style="width: 100%;">
+            <el-table-column label="序号" width="60" type="index" :index="(index) => index + 1" />
             <el-table-column prop="portName" label="港口名称" width="120" />
             <el-table-column prop="longitude" label="经度" width="110" />
             <el-table-column prop="latitude" label="纬度" width="110" />
-            <el-table-column prop="country" label="所在国家" width="120" />
+            <el-table-column prop="country" label="所在国家" width="100" />
           </el-table>
         </el-card>
       </div>
@@ -199,7 +199,7 @@ const handleSearch = () => {
 }
 
 .sidebar {
-  width: 400px;
+  width: 600px;
   overflow-y: auto;
   padding: 10px;
   border-right: 1px solid #eee;

@@ -3,7 +3,7 @@
     <el-card class="search-card">
       <el-input 
         v-model="searchCarName" 
-        placeholder="输入拖车编号查询" 
+        placeholder="输入车辆编号查询" 
         style="width: 300px;"
         @keyup.enter="handleSearch"
       >
@@ -23,18 +23,18 @@
         </div>
       </template>
       <el-table :data="filteredVehicles" stripe style="width: 100%;">
-        <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column prop="carName" label="拖车编号" width="140" />
-        <el-table-column label="所在港口" width="140">
+        <el-table-column label="序号" width="80" type="index" :index="(index) => index + 1" />
+        <el-table-column prop="carName" label="车辆编号" />
+        <el-table-column label="所在港口">
           <template #default="{ row }">{{ getPortName(row.portId) }}</template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="row.status === '闲置' ? 'success' : 'primary'">{{ row.status }}</el-tag>
+            <el-tag :type="row.status === '在用' ? 'success' : 'warning'">{{ row.status }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="200">
+        <el-table-column prop="createTime" label="创建时间" />
+        <el-table-column label="操作" width="160">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="openEditModal(row)">编辑</el-button>
             <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
@@ -45,16 +45,16 @@
 
     <el-dialog v-model="showModal" :title="isEdit ? '编辑车辆' : '新增车辆'" width="500px">
       <el-form :model="form" label-width="100px">
-        <el-form-item label="拖车编号">
-          <el-input v-model="form.carName" placeholder="请输入拖车编号" />
+        <el-form-item label="车辆编号">
+          <el-input v-model="form.carName" placeholder="请输入车辆编号" />
         </el-form-item>
         <el-form-item label="所在港口">
-          <el-select v-model="form.portName" style="width: 100%;">
+          <el-select v-model="form.portName" style="width: 100%;" placeholder="选择">
             <el-option v-for="port in ports" :key="port.id" :label="port.name" :value="port.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
-          <el-select v-model="form.status" style="width: 100%;">
+          <el-select v-model="form.status" style="width: 100%;" placeholder="选择">
             <el-option label="闲置" value="闲置" />
             <el-option label="在用" value="在用" />
           </el-select>
@@ -152,7 +152,7 @@ const openEditModal = (row) => {
 
 const handleSave = async () => {
   if (!form.carName) {
-    ElMessage.warning('请输入拖车编号')
+    ElMessage.warning('请输入车辆编号')
     return
   }
   try {

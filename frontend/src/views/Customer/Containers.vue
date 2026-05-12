@@ -14,7 +14,7 @@
     </el-card>
 
     <el-row :gutter="20" class="stats-row">
-      <el-col :span="6">
+      <el-col :span="8">
         <el-card class="stat-card">
           <div class="stat-content">
             <div class="stat-value">{{ containers.length }}</div>
@@ -22,7 +22,7 @@
           </div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :span="8">
         <el-card class="stat-card">
           <div class="stat-content">
             <div class="stat-value">{{ occupiedCount }}</div>
@@ -30,19 +30,11 @@
           </div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :span="8">
         <el-card class="stat-card">
           <div class="stat-content">
             <div class="stat-value">{{ emptyCount }}</div>
             <div class="stat-label">空闲</div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
-        <el-card class="stat-card">
-          <div class="stat-content">
-            <div class="stat-value">{{ transitCount }}</div>
-            <div class="stat-label">运输中</div>
           </div>
         </el-card>
       </el-col>
@@ -56,23 +48,18 @@
             <el-option label="全部" value="" />
             <el-option label="空闲" value="空闲" />
             <el-option label="使用中" value="使用中" />
-            <el-option label="运输中" value="运输中" />
           </el-select>
         </div>
       </template>
-      <el-table :data="filteredContainers" stripe>
-        <el-table-column prop="id" label="集装箱编号" />
-        <el-table-column prop="content" label="内容" />
-        <el-table-column prop="size" label="尺寸" />
-        <el-table-column prop="companyName" label="所属公司" />
-        <el-table-column label="状态">
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(getStateText(row.state))">{{ getStateText(row.state) }}</el-tag>
-          </template>
+      <el-table :data="filteredContainers" stripe style="width: 100%;">
+        <el-table-column label="序号" width="80" type="index" :index="(index) => index + 1" />
+        <el-table-column label="货物描述">
+          <template #default="{ row }">{{ row.content || '<暂无>' }}</template>
         </el-table-column>
-        <el-table-column label="操作">
+        <el-table-column prop="capacity" label="容量(TEU)" />
+        <el-table-column label="状态" width="100">
           <template #default="{ row }">
-            <el-button type="primary" size="small" @click="handleViewDetail(row)">详情</el-button>
+            <el-tag :type="getStatusType(getStateText(row.status))">{{ getStateText(row.status) }}</el-tag>
           </template>
         </el-table-column>
       </el-table>
@@ -104,18 +91,27 @@ onMounted(() => {
 })
 
 const getStateText = (state) => {
+  const stateStr = String(state)
   const stateMap = {
-    0: '空闲',
-    1: '使用中',
-    2: '运输中'
+    '0': '空闲',
+    '1': '使用中'
   }
-  return stateMap[state] || '未知'
+  return stateMap[stateStr] || '未知'
+}
+
+const getStatusType = (status) => {
+  const statusMap = {
+    '空闲': 'success',
+    '使用中': 'primary',
+    '未知': 'info'
+  }
+  return statusMap[status] || 'info'
 }
 
 const filteredContainers = computed(() => {
   let result = containers.value
   if (statusFilter.value) {
-    result = result.filter(item => getStateText(item.state) === statusFilter.value)
+    result = result.filter(item => getStateText(item.status) === statusFilter.value)
   }
   if (searchContainerNumber.value) {
     result = result.filter(item => String(item.id).includes(searchContainerNumber.value))
@@ -123,19 +119,8 @@ const filteredContainers = computed(() => {
   return result
 })
 
-const occupiedCount = computed(() => containers.value.filter(c => c.state === 1).length)
-const emptyCount = computed(() => containers.value.filter(c => c.state === 0).length)
-const transitCount = computed(() => containers.value.filter(c => c.state === 2).length)
-
-const getStatusType = (status) => {
-  const statusMap = {
-    '空闲': 'success',
-    '使用中': 'primary',
-    '运输中': 'warning',
-    '未知': 'info'
-  }
-  return statusMap[status] || 'info'
-}
+const occupiedCount = computed(() => containers.value.filter(c => c.status === 1).length)
+const emptyCount = computed(() => containers.value.filter(c => c.status === 0).length)
 
 const handleSearch = () => {
   if (searchContainerNumber.value) {

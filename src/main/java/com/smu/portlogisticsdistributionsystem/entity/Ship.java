@@ -17,6 +17,14 @@ public class Ship {
     private String shipName;
     @TableField("company_id")
     private Integer companyId;
+    @TableField("status")
+    private Integer status;
+    @TableField("capacity")
+    private Integer capacity;
+    @TableField("current_teu")
+    private Integer currentTeu;
+    @TableField("current_port_id")
+    private Integer currentPortId;
     @TableField("update_time")
     private LocalDateTime updateTime;
     @TableField("create_time")

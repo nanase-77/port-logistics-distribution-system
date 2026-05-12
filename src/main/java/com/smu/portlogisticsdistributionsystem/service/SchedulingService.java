@@ -30,6 +30,12 @@ public interface SchedulingService {
     ScheduleResult scheduleCargo(SchedulingRequest request);
 
     /**
+     * 确认订单，更新数据库
+     * @param result 调度结果
+     */
+    void confirmOrder(ScheduleResult result);
+
+    /**
      * 获取资源优化建议
      * @return 优化建议列表
      */

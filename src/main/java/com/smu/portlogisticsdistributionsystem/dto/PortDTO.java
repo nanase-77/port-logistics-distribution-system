@@ -6,6 +6,7 @@ import lombok.Data;
 public class PortDTO {
     private Integer id;
     private String portName;
+    private String country;
     private double longitude;
     private double latitude;
 }

@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.smu.portlogisticsdistributionsystem.dto.ContainerDTO;
 import com.smu.portlogisticsdistributionsystem.dto.ContainerQueryDTO;
 import com.smu.portlogisticsdistributionsystem.dto.ContainerWithCompanyDTO;
@@ -28,11 +27,11 @@ public class ContainerServiceImpl extends ServiceImpl<ContainerMapper, Container
         if (StringUtils.hasText(containerQueryDTO.getContent())) {
             q.like("content", containerQueryDTO.getContent());
         }
-        if (StringUtils.hasText(containerQueryDTO.getSize())) {
-            q.eq("size", containerQueryDTO.getSize());
+        if (containerQueryDTO.getCapacity() != null) {
+            q.eq("capacity", containerQueryDTO.getCapacity());
         }
-        if (containerQueryDTO.getCompanyId() != null) {
-            q.eq("company_id", containerQueryDTO.getCompanyId());
+        if (containerQueryDTO.getStatus() != null) {
+            q.eq("status", containerQueryDTO.getStatus());
         }
         return baseMapper.selectPage(p, q);
     }
