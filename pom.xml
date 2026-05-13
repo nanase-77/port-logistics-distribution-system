@@ -144,6 +144,13 @@
             <version>5.23.0</version>
         </dependency>
         
+        <!-- MinIO SDK -->
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <version>8.5.3</version>
+        </dependency>
+        
         <!-- Spring Data Neo4j -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

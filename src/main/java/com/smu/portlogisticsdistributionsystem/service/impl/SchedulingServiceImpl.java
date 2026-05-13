@@ -15,6 +15,8 @@ import com.smu.portlogisticsdistributionsystem.mapper.OrderMapper;
 import com.smu.portlogisticsdistributionsystem.mapper.PortMapper;
 import com.smu.portlogisticsdistributionsystem.mapper.ShipMapper;
 import com.smu.portlogisticsdistributionsystem.service.GeoService;
+import com.smu.portlogisticsdistributionsystem.service.RedisLogisticService;
+import com.smu.portlogisticsdistributionsystem.service.RedisOrderService;
 import com.smu.portlogisticsdistributionsystem.service.SchedulingService;
 import com.smu.portlogisticsdistributionsystem.util.UserHolder;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -54,6 +56,8 @@ public class SchedulingServiceImpl implements SchedulingService {
     private final OrderMapper orderMapper;
     private final LogisticMapper logisticMapper;
     private final GeoService geoService;
+    private final RedisOrderService redisOrderService;
+    private final RedisLogisticService redisLogisticService;
 
     @Override
     public ScheduleResult calculateShortestPath(Long fromPortId, Long toPortId) {
@@ -249,6 +253,15 @@ public class SchedulingServiceImpl implements SchedulingService {
                 car.setStatus("在用");
                 carMapper.updateById(car);
             }
+        }
+
+        // 6. 清除 Redis 缓存，确保下次查询从数据库获取最新数据
+        try {
+            redisOrderService.clearAllOrders();
+            redisLogisticService.clearAllLogistics();
+            log.info("Cleared order and logistics cache after scheduling");
+        } catch (Exception e) {
+            log.warn("Failed to clear Redis cache: {}", e.getMessage());
         }
     }
 

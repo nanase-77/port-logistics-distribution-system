@@ -21,6 +21,18 @@
       </template>
       <el-table :data="filteredVehicles" stripe style="width: 100%;">
         <el-table-column label="序号" width="80" type="index" :index="(index) => index + 1" />
+        <el-table-column label="车辆图片" width="120">
+          <template #default="{ row }">
+            <el-image 
+              v-if="row.imageUrl" 
+              :src="row.imageUrl" 
+              style="width: 80px; height: 60px;"
+              fit="cover"
+              :preview-src-list="[row.imageUrl]"
+            />
+            <span v-else>无图片</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="carName" label="车辆编号" />
         <el-table-column prop="portName" label="所在港口" />
         <el-table-column label="状态" width="100">

@@ -24,6 +24,18 @@
       </template>
       <el-table :data="filteredVehicles" stripe style="width: 100%;">
         <el-table-column label="序号" width="80" type="index" :index="(index) => index + 1" />
+        <el-table-column label="车辆图片" width="120">
+          <template #default="{ row }">
+            <el-image 
+              v-if="row.imageUrl" 
+              :src="row.imageUrl" 
+              style="width: 80px; height: 60px;"
+              fit="cover"
+              :preview-src-list="[row.imageUrl]"
+            />
+            <span v-else>无图片</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="carName" label="车辆编号" />
         <el-table-column label="所在港口">
           <template #default="{ row }">{{ getPortName(row.portId) }}</template>
@@ -47,6 +59,22 @@
       <el-form :model="form" label-width="100px">
         <el-form-item label="车辆编号">
           <el-input v-model="form.carName" placeholder="请输入车辆编号" />
+        </el-form-item>
+        <el-form-item label="车辆图片">
+          <el-upload
+            class="upload-demo"
+            action="/api/file/upload"
+            :on-success="handleUploadSuccess"
+            :on-error="handleUploadError"
+            :file-list="imageFileList"
+            accept="image/*"
+            :limit="1"
+          >
+            <el-button size="small" type="primary">点击上传</el-button>
+          </el-upload>
+          <div v-if="form.imageUrl" style="margin-top: 10px;">
+            <el-image :src="form.imageUrl" style="width: 100px; height: 80px;" fit="cover" />
+          </div>
         </el-form-item>
         <el-form-item label="所在港口">
           <el-select v-model="form.portName" style="width: 100%;" placeholder="选择">
@@ -80,6 +108,7 @@ const searchCarName = ref('')
 
 const ports = ref([])
 const vehicles = ref([])
+const imageFileList = ref([])
 
 const fetchPorts = async () => {
   try {
@@ -121,9 +150,23 @@ const handleSearch = () => {
   }
 }
 
+const handleUploadSuccess = (response) => {
+  if (response.success) {
+    form.imageUrl = response.url
+    ElMessage.success('图片上传成功')
+  } else {
+    ElMessage.error(response.message || '图片上传失败')
+  }
+}
+
+const handleUploadError = () => {
+  ElMessage.error('图片上传失败')
+}
+
 const form = reactive({
   id: null,
   carName: '',
+  imageUrl: '',
   portId: 1,
   status: '闲置'
 })
@@ -131,8 +174,10 @@ const form = reactive({
 const resetForm = () => {
   form.id = null
   form.carName = ''
+  form.imageUrl = ''
   form.portId = 1
   form.status = '闲置'
+  imageFileList.value = []
 }
 
 const openAddModal = () => {
@@ -145,6 +190,7 @@ const openEditModal = (row) => {
   isEdit.value = true
   form.id = row.id
   form.carName = row.carName
+  form.imageUrl = row.imageUrl || ''
   form.portId = row.portId
   form.status = row.status
   showModal.value = true
@@ -157,13 +203,14 @@ const handleSave = async () => {
   }
   try {
     if (isEdit.value) {
-      await updateVehicle({ id: form.id, carName: form.carName, portId: form.portId })
+      await updateVehicle({ id: form.id, carName: form.carName, imageUrl: form.imageUrl, portId: form.portId })
       ElMessage.success('车辆信息已更新')
     } else {
-      await addVehicle({ carName: form.carName, portId: form.portId })
+      await addVehicle({ carName: form.carName, imageUrl: form.imageUrl, portId: form.portId })
       ElMessage.success('车辆已创建')
     }
     showModal.value = false
+    imageFileList.value = []
     fetchData()
   } catch {
     ElMessage.error('操作失败')
